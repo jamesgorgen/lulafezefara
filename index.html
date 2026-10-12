@@ -198,7 +198,7 @@ header{padding-right:170px;min-height:150px;justify-content:center}
     </section>
   </main>
 
-  <footer><strong>Fontes.</strong> Programa de Governo de Lula para o próximo mandato, da coligação PT, PSB, PV, PCdoB, PDT, PSOL e Rede (citado pela página, como p. 54), e Cadernos do Futuro do Brasil, "Brasil pronto para mais!", versão para editoração (citados pelo código do trecho, como C 212, porque essa versão ainda não tem paginação final). As respostas resumem o que os dois documentos afirmam e não verificam os dados de forma independente. Confira o trecho original antes de citar. <span style="font-family:var(--mono)">Versão 20 · web</span></footer>
+  <footer><strong>Fontes.</strong> Programa de Governo de Lula para o próximo mandato, da coligação PT, PSB, PV, PCdoB, PDT, PSOL e Rede (citado pela página, como p. 54), e Cadernos do Futuro do Brasil, "Brasil pronto para mais!", versão para editoração (citados pelo código do trecho, como C 212, porque essa versão ainda não tem paginação final). As respostas resumem o que os dois documentos afirmam e não verificam os dados de forma independente. Confira o trecho original antes de citar. <span style="font-family:var(--mono)">Versão 21 · web</span></footer>
 </div>
 
 <dialog id="dlg" aria-labelledby="dlg-t">
@@ -400,6 +400,14 @@ function renderMulti(text, fmts, done){
   fmts.forEach(f => { const t = (parts[f] || '').trim(); if(!t) return; curFmt = f; plain = !!SOCIAL[f]; target = $('o-'+f).querySelector('.out-b'); renderAnswer(t); });
 }
 // Tema em forma canônica, para que perguntas escritas de modos diferentes reaproveitem a mesma ficha.
+const ERROS = {
+  limite: 'Muitas consultas em pouco tempo. Aguarde um minuto e tente de novo.',
+  sem_resposta: 'O serviço não aceitou o pedido vindo deste endereço. Confira se o domínio ' + location.origin + ' está na lista de origens do Worker e se o endereço no config.js está certo. (código: sem_resposta)',
+  sem_chave: 'O Worker está sem a chave da API cadastrada. (código: sem_chave)',
+  chave_recusada: 'A API da Anthropic recusou a chave. Confira o segredo ANTHROPIC_API_KEY no Worker. (código: chave_recusada)',
+  falha_api: 'A API da Anthropic recusou o pedido. Confira os créditos, o limite de gasto e os nomes dos modelos no Worker. (código: falha_api)',
+  pedido_invalido: 'O pedido ficou grande demais ou veio incompleto. Tente um tema mais curto. (código: pedido_invalido)'
+};
 function expPrompt(tema){ return 'Responda apenas com um array JSON de até 12 strings curtas. São termos, sinônimos, siglas e nomes de programas federais que um programa de governo brasileiro de 2026 usaria ao tratar do tema a seguir. Exemplo: ["conectividade","banda larga","FUST"]\n\nTema: '+tema; }
 function canon(q){ const w = words(q).filter(x => !STOP.has(x)); return (w.length ? [...new Set(w)].join(' ') : norm(q).replace(/\s+/g,' ').trim()).slice(0,120); }
 function fichaView(ficha, modo){
@@ -456,7 +464,7 @@ async function answer(q){
   }catch(e){
     if(my===seq){
       if(!built) idle('Não foi possível gerar a resposta.', true); else finish();
-      note(e && e.code === 'limite' ? 'Muitas consultas em pouco tempo. Aguarde um minuto e tente de novo.' : 'O serviço de geração de textos está indisponível no momento. Tente de novo mais tarde.', true);
+      note(ERROS[e && e.code] || 'O serviço de geração de textos está indisponível no momento. Tente de novo mais tarde. (código: ' + ((e && e.code) || 'desconhecido') + ')', true);
     }
   }finally{ if(my===seq) $('go').disabled = false; }
 }
@@ -561,9 +569,9 @@ let ready = false, pending = null;
 run($('q').value, false);
 const PROXY = (window.LULA_PROXY || '').trim();
 sample = /^https:\/\//.test(PROXY) ? (async (p, tier, o) => {
-  const r = await fetch(PROXY, {method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(Object.assign({prompt:p, tier: tier || 'default'}, o || {}))});
+  let r; try{ r = await fetch(PROXY, {method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(Object.assign({prompt:p, tier: tier || 'default'}, o || {}))}); }catch(_){ const e = new Error('sem_resposta'); e.code = 'sem_resposta'; throw e; }
   const j = await r.json().catch(() => ({}));
-  if(!r.ok || typeof j.text !== 'string'){ const e = new Error(j.error || 'falha'); e.code = j.error || 'falha'; throw e; }
+  if(!r.ok || typeof j.text !== 'string'){ const c = j.error || (r.status === 403 ? 'sem_resposta' : 'falha_' + r.status); const e = new Error(c); e.code = c; throw e; }
   return j.text;
 }) : null;
 ready = true; run($('q').value, false);
