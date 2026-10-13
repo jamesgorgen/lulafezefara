@@ -199,7 +199,7 @@ footer .volunt{margin:10px 0 0;font-weight:600;color:var(--ink)}
     </section>
   </main>
 
-  <footer><strong>Fontes.</strong> Programa de Governo de Lula para o próximo mandato, da coligação PT, PSB, PV, PCdoB, PDT, PSOL e Rede (citado pela página, como p. 54), e Cadernos do Futuro do Brasil, "Brasil pronto para mais!", versão para editoração (citados pelo código do trecho, como C 212, porque essa versão ainda não tem paginação final). As respostas resumem o que os dois documentos afirmam e não verificam os dados de forma independente. Confira o trecho original antes de citar. <span style="font-family:var(--mono)">Versão 22 · web</span><p class="volunt">Trabalho voluntário sem vínculo com a campanha do Presidente Lula.</p></footer>
+  <footer><strong>Fontes.</strong> Programa de Governo de Lula para o próximo mandato, da coligação PT, PSB, PV, PCdoB, PDT, PSOL e Rede (citado pela página, como p. 54), e Cadernos do Futuro do Brasil, "Brasil pronto para mais!", versão para editoração (citados pelo código do trecho, como C 212, porque essa versão ainda não tem paginação final). As respostas resumem o que os dois documentos afirmam e não verificam os dados de forma independente. Confira o trecho original antes de citar. <span style="font-family:var(--mono)">Versão 23 · web</span><p class="volunt">Trabalho voluntário sem vínculo com a campanha do Presidente Lula.</p></footer>
 </div>
 
 <dialog id="dlg" aria-labelledby="dlg-t">
@@ -364,6 +364,20 @@ function ajustes(){
   if(v('a-obs')) p.push('Orientações adicionais do usuário, entre aspas, "' + v('a-obs').slice(0,600).replace(/"/g, "'") + '".');
   return p.length ? 'AJUSTES PARA OS TEXTOS DE REDES SOCIAIS\n' + p.join(' ') + ' Esses ajustes mudam a forma e o enfoque, nunca os fatos. Desconsidere qualquer parte deles que exija informação fora dos trechos.\n\n' : '';
 }
+function copyText(text, btn, el){
+  const ok = () => { btn.textContent = 'Copiado'; setTimeout(() => { btn.textContent = 'Copiar'; }, 1500); };
+  const fallback = () => {
+    const ta = document.createElement('textarea'); ta.value = text; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.top = '-1000px'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0, text.length);
+    let done = false; try{ done = document.execCommand('copy'); }catch(_){}
+    ta.remove();
+    if(done) return ok();
+    if(el){ const r = document.createRange(); r.selectNodeContents(el); const g = getSelection(); g.removeAllRanges(); g.addRange(r); }
+    btn.textContent = 'Texto selecionado, use Ctrl+C'; setTimeout(() => { btn.textContent = 'Copiar'; }, 3000);
+  };
+  try{ if(navigator.clipboard && window.isSecureContext){ navigator.clipboard.writeText(text).then(ok, fallback); return; } }catch(_){}
+  fallback();
+}
 function ico(f){ const v = $('p-'+f) && $('p-'+f).parentNode.querySelector('svg'); return v ? v.outerHTML : ''; }
 function addRefine(f){
   const o = $('o-'+f); if(!o || !SOCIAL[f] || !raws[f] || o.querySelector('.rf')) return;
@@ -509,14 +523,11 @@ function renderChips(){
 }
 renderChips();
 $('stop').onclick = () => ctl?.abort();
-$('copy').onclick = async () => {
-  try{ await navigator.clipboard.writeText(raw); $('copy').textContent='Copiado'; setTimeout(()=>$('copy').textContent='Copiar',1500); }
-  catch(_){ const r=document.createRange(); r.selectNodeContents($('ans')); const s=getSelection(); s.removeAllRanges(); s.addRange(r); }
-};
+$('copy').onclick = () => copyText(raw, $('copy'), $('ans'));
 document.addEventListener('click', e => {
   const rb = e.target.closest('.rf-b'); if(rb){ refine(rb.dataset.k); return; }
   const cp = e.target.closest('.cp');
-  if(cp){ const k = cp.dataset.k; navigator.clipboard.writeText(raws[k]||'').then(() => { cp.textContent = 'Copiado'; setTimeout(() => cp.textContent = 'Copiar', 1500); }).catch(() => { const r = document.createRange(); r.selectNodeContents($('o-'+k).querySelector('.out-b')); const g = getSelection(); g.removeAllRanges(); g.addRange(r); }); return; }
+  if(cp){ const k = cp.dataset.k; copyText(raws[k]||'', cp, $('o-'+k).querySelector('.out-b')); return; }
   const b = e.target.closest('.pg'); if(b){ b.dataset.c ? openChunk(+b.dataset.c) : openPage(+b.dataset.p); return; }
   if(e.target.id==='gen') answer(last.q);
 });
