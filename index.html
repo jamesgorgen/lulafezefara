@@ -199,7 +199,7 @@ footer .volunt{margin:10px 0 0;font-weight:600;color:var(--ink)}
     </section>
   </main>
 
-  <footer><strong>Fontes.</strong> Programa de Governo de Lula para o próximo mandato, da coligação PT, PSB, PV, PCdoB, PDT, PSOL e Rede (citado pela página, como p. 54), e Cadernos do Futuro do Brasil, "Brasil pronto para mais!", versão para editoração (citados pelo código do trecho, como C 212, porque essa versão ainda não tem paginação final). As respostas resumem o que os dois documentos afirmam e não verificam os dados de forma independente. Confira o trecho original antes de citar. <span style="font-family:var(--mono)">Versão 23 · web</span><p class="volunt">Trabalho voluntário sem vínculo com a campanha do Presidente Lula.</p></footer>
+  <footer><strong>Fontes.</strong> Programa de Governo de Lula para o próximo mandato, da coligação PT, PSB, PV, PCdoB, PDT, PSOL e Rede (citado pela página, como p. 54), e Cadernos do Futuro do Brasil, "Brasil pronto para mais!", versão para editoração (citados pelo código do trecho, como C 212, porque essa versão ainda não tem paginação final). As respostas resumem o que os dois documentos afirmam e não verificam os dados de forma independente. Confira o trecho original antes de citar. <span style="font-family:var(--mono)">Versão 24 · web</span><p class="volunt">Trabalho voluntário sem vínculo com a campanha do Presidente Lula.</p></footer>
 </div>
 
 <dialog id="dlg" aria-labelledby="dlg-t">
@@ -424,7 +424,7 @@ const ERROS = {
   pedido_invalido: 'O pedido ficou grande demais ou veio incompleto. Tente um tema mais curto. (código: pedido_invalido)'
 };
 function expPrompt(tema){ return 'Responda apenas com um array JSON de até 12 strings curtas. São termos, sinônimos, siglas e nomes de programas federais que um programa de governo brasileiro de 2026 usaria ao tratar do tema a seguir. Exemplo: ["conectividade","banda larga","FUST"]\n\nTema: '+tema; }
-function canon(q){ const w = words(q).filter(x => !STOP.has(x)); return (w.length ? [...new Set(w)].join(' ') : norm(q).replace(/\s+/g,' ').trim()).slice(0,120); }
+function canon(q){ const w = words(q).filter(x => !STOP.has(x)); return (w.length ? [...new Set(w)].sort().join(' ') : norm(q).replace(/\s+/g,' ').trim()).slice(0,120); }
 function fichaView(ficha, modo){
   if(modo === 'ambos') return ficha;
   const out = []; let keep = true;
@@ -461,7 +461,7 @@ async function answer(q){
     if(!r.hits.length){ idle('As fontes não trazem trechos sobre este tema. Tente outra formulação.'); return; }
     $('ans').innerHTML = fmts.map(f => '<div class="out" id="o-'+f+'"><div class="out-h"><strong>'+ico(f)+NAMES[f]+'</strong><button type="button" class="ghost cp" data-k="'+f+'" hidden>Copiar</button></div><div class="out-b"><p class="note dots">'+(f==='analise' ? 'Lendo '+r.hits.length+' trechos' : 'Preparando o texto')+'</p></div></div>').join(''); built = true;
     // Etapa 1: ficha de fatos do tema (uma por tema, reaproveitada pelo serviço).
-    const ficha = String(await sample(prompt(tema, 'ambos', r.hits, 'analise'), 'default'));
+    const fr = await sample(prompt(tema, 'ambos', r.hits, 'analise'), 'default'); const ficha = String(fr); const reuso = {ficha: fr.cached, posts: 0};
     if(my!==seq) return;
     if(fmts.includes('analise')){ curFmt = 'analise'; plain = false; target = $('o-analise').querySelector('.out-b'); renderAnswer(fichaView(ficha, modo)); $('o-analise').querySelector('.cp').hidden = false; }
     // Etapa 2: textos para as redes, escritos a partir da ficha.
@@ -469,13 +469,14 @@ async function answer(q){
     if(social.length){
       const slot = Math.floor(Math.random()*4);
       await Promise.all(social.map(async f => {
-        const text = String(await sample(promptPosts(tema, modo, ficha, [f]), 'post', {slot}));
+        const pr2 = await sample(promptPosts(tema, modo, ficha, [f]), 'post', {slot}); if(pr2.cached) reuso.posts++; const text = String(pr2);
         if(my!==seq) return;
         renderMulti(text, [f], true); $('o-'+f).querySelector('.cp').hidden = !raws[f]; addRefine(f);
       }));
       if(my!==seq) return;
     }
     finish();
+    note('Ficha do tema ' + (reuso.ficha ? 'reaproveitada, sem custo.' : 'gerada agora e guardada para as próximas consultas.') + (social.length ? ' Textos para redes reaproveitados ' + reuso.posts + ' de ' + social.length + '.' : ''));
   }catch(e){
     if(my===seq){
       if(!built) idle('Não foi possível gerar a resposta.', true); else finish();
@@ -584,7 +585,7 @@ sample = /^https:\/\//.test(PROXY) ? (async (p, tier, o) => {
   let r; try{ r = await fetch(PROXY, {method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(Object.assign({prompt:p, tier: tier || 'default'}, o || {}))}); }catch(_){ const e = new Error('sem_resposta'); e.code = 'sem_resposta'; throw e; }
   const j = await r.json().catch(() => ({}));
   if(!r.ok || typeof j.text !== 'string'){ const c = j.error || (r.status === 403 ? 'sem_resposta' : 'falha_' + r.status); const e = new Error(c); e.code = c; throw e; }
-  return j.text;
+  const out = new String(j.text); out.cached = !!j.cached; return out;
 }) : null;
 ready = true; run($('q').value, false);
 })();
