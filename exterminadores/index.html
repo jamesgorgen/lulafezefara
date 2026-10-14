@@ -163,8 +163,26 @@ details.detalhe > summary{cursor:pointer;font-weight:700;font-size:15px;margin-b
 .tri-status{font-size:13.5px;color:var(--ink-3);margin-top:8px;min-height:1.2em}
 .tri-status.erro{color:var(--warn)}
 .tri{font-size:12px;font-weight:700;border-radius:3px;padding:1px 7px;border:1.5px solid currentColor}
-.tri-conflito{color:var(--red)}
-.tri-texto{color:var(--warn)}
+.tri-ameaca{color:var(--red);border-color:var(--red);background:color-mix(in srgb, var(--red) 10%, transparent)}
+.tri-amplia{color:#2f6b3a}
+.tri-incerto{color:var(--warn)}
+.tri-neutro{color:var(--ink-3);font-weight:600}
+.tri-com{color:var(--ink);border-color:var(--ink)}
+.tri-provavel{color:var(--ink-2);border-style:dashed}
+.tri-linha{display:flex;flex-wrap:wrap;gap:4px 16px;align-items:baseline;font-size:14.5px;margin:0 0 6px}
+.tri-linha > span:first-child{font-size:12.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-3);min-width:150px}
+.tri-tabela{border-collapse:separate;border-spacing:3px;font-size:14px;margin:4px 0 10px;width:100%;max-width:720px}
+.tri-tabela th{font-weight:600;color:var(--ink-2);text-align:left;padding:4px 8px 4px 0}
+.tri-tabela thead th{text-align:center;font-size:12.5px;line-height:1.25}
+.tri-tabela td{text-align:center;padding:7px 4px;font-variant-numeric:tabular-nums;font-weight:600;background:var(--paper);cursor:pointer;min-width:64px}
+.tri-tabela td.zero{color:var(--ink-3);font-weight:400;cursor:default}
+.tri-tabela td.forte{background:color-mix(in srgb, var(--red) 16%, var(--sheet));color:var(--red)}
+.tri-tabela td.sel,.tri-tabela th.sel{outline:3px solid var(--ink);outline-offset:-3px}
+.tri-tabela th[data-fd],.tri-tabela th[data-fc]{cursor:pointer}
+.tri-tabela th[data-fd]:hover,.tri-tabela th[data-fc]:hover{text-decoration:underline}
+.tri-tabela .tot{background:transparent;color:var(--ink-2);border-left:2px solid var(--line)}
+.tri-tabela tfoot td{background:transparent;color:var(--ink-2)}
+.tri-nota{font-size:13px;color:var(--ink-3);margin:0 0 10px}
 .tri-sem{color:var(--ink-3);font-weight:600}
 .tri-motivo{font-size:13.5px;color:var(--ink-2);margin:8px 0 0}
 .tri-motivo b{color:var(--ink)}
@@ -232,8 +250,8 @@ mark{background:var(--mark);color:var(--mark-ink);padding:0 2px}
 .barra-avaliar .btn-sec{border-color:currentColor;color:inherit}
 .aval{margin-top:12px;border-top:1px dashed var(--line);padding-top:12px}
 .aval .selo{display:inline-block;font-weight:700;font-size:13px;border-radius:3px;padding:2px 9px;margin-right:8px}
-.selo.conflita{background:var(--red);color:var(--red-ink)}
-.selo.converge{background:#2f6b3a;color:#fff}
+.selo.ameaca{background:var(--red);color:var(--red-ink)}
+.selo.favoravel{background:#2f6b3a;color:#fff}
 .selo.misto{background:var(--mark);color:var(--mark-ink)}
 .selo.neutro{background:var(--paper);color:var(--ink-2)}
 .aval .meta-aval{font-size:12.5px;color:var(--ink-3)}
@@ -343,7 +361,7 @@ footer p{max-width:90ch;margin:0 0 6px}
 </div>
 
 <section id="aba-taxonomia" class="wrap tax" hidden>
-  <p>Cada projeto é classificado pela sua ementa. Quando a ementa contém um dos termos abaixo, o projeto entra no tema. Acentos e maiúsculas não contam, e plurais e variações curtas também são reconhecidos.</p>
+  <p>As áreas, os temas e os termos desta taxonomia foram construídos a partir dos Cadernos do Futuro do Brasil e ampliados com sinônimos e expressões usadas nas ementas. Cada projeto é classificado pela sua ementa. Quando a ementa contém um dos termos abaixo, o projeto entra no tema. Acentos e maiúsculas não contam, e plurais e variações curtas também são reconhecidos.</p>
   <label class="sr" for="tax-busca">Procurar tema ou termo</label>
   <input type="search" id="tax-busca" placeholder="Procurar tema ou termo, por exemplo escola sem partido">
   <div id="taxonomia"></div>
@@ -356,14 +374,14 @@ footer p{max-width:90ch;margin:0 0 6px}
   </div>
 </footer>
 
-<script src="config.js?v=20261014c"></script>
+<script src="config.js?v=20261014f"></script>
 <script>
 // Endereço padrão do serviço intermediário, usado se o config.js não for encontrado ou vier vazio.
 if (!window.MONITOR_PROXY) window.MONITOR_PROXY = 'https://exterminadores-proxy.gorgen-james.workers.dev';
 </script>
-<script src="taxonomia.js?v=20261014c"></script>
-<script src="promessas.js?v=20261014c"></script>
-<script src="motor.js?v=20261014c"></script>
+<script src="taxonomia.js?v=20261014f"></script>
+<script src="promessas.js?v=20261014f"></script>
+<script src="motor.js?v=20261014f"></script>
 <script>
 (function(){
 'use strict';
@@ -390,15 +408,23 @@ function gravarAval(){ try { localStorage.setItem('exterminadores-avaliacoes', J
 
 // Triagem rápida pelas ementas, também guardada no navegador (e por 90 dias no Worker).
 let TRI = {};
-try { TRI = JSON.parse(localStorage.getItem('exterminadores-triagem') || '{}'); } catch (e) { TRI = {}; }
-function gravarTri(){ try { localStorage.setItem('exterminadores-triagem', JSON.stringify(TRI)); } catch (e) {} }
-const triagem = { rodando: false, parar: false, feitos: 0, total: 0, erro: '', filtro: 'todos' };
+try { TRI = JSON.parse(localStorage.getItem('exterminadores-triagem3') || '{}'); } catch (e) { TRI = {}; }
+function gravarTri(){ try { localStorage.setItem('exterminadores-triagem3', JSON.stringify(TRI)); } catch (e) {} }
+const triagem = { rodando: false, parar: false, feitos: 0, total: 0, erro: '', fd: 'todos', fc: 'todos' };
 const passaTriagem = it => {
-  if (triagem.filtro === 'todos') return true;
+  if (triagem.fd === 'todos' && triagem.fc === 'todos') return true;
   const t = TRI[it.chave]; if (!t) return false;
-  return t.c === 'conflito' || (triagem.filtro === 'conflito-texto' && t.c === 'texto');
+  if (triagem.fd !== 'todos' && t.d !== triagem.fd) return false;
+  if (triagem.fc !== 'todos' && t.c !== triagem.fc) return false;
+  return true;
 };
-const qualTriagem = () => triagem.filtro === 'conflito' ? ' com provável conflito' : triagem.filtro === 'conflito-texto' ? ' com provável conflito ou a conferir' : '';
+const qualTriagem = dele => {
+  const D = { ameaca: ' que ameaçam direitos', incerto: ' de efeito incerto sobre direitos', neutro: ' neutros para direitos', amplia: ' que ampliam direitos' };
+  const quem = dele ? ' dele' : ' de Flávio';
+  const C = { com: ' com relação ao programa' + quem, provavel: ' com provável relação ao programa' + quem, sem: ' sem relação com o programa' + quem };
+  const d = D[triagem.fd] || '', c = C[triagem.fc] || '';
+  return d + (d && c ? ',' : '') + c;
+};
 
 function lerPref(){ try { return JSON.parse(localStorage.getItem('exterminadores-pref') || '{}'); } catch(e){ return {}; } }
 function gravarPref(p){ try { localStorage.setItem('exterminadores-pref', JSON.stringify(p)); } catch(e){} }
@@ -558,13 +584,13 @@ $('#filtro-temas').addEventListener('change', e => {
   estado.cadernoSel = null; estado.promessaSel = null; estado.pagina = 1; desenhar();
 });
 
-function baseFiltrada(){
+function baseFiltrada(semTriagem){
   const txt = Motor.normalizar(estado.texto.trim());
   return estado.itens.filter(it => {
     if ($('#sem-homenagem').checked && it.homenagem) return false;
     if ($('#so-marcados').checked && !estado.marcados.has(it.chave) && !AVAL[it.chave]) return false;
     if ($('#so-flavio').checked && !ehFlavio(it)) return false;
-    if (!passaTriagem(it)) return false;
+    if (!semTriagem && !passaTriagem(it)) return false;
     if (estado.temas.size) { if (!it.temas.some(t => estado.temas.has(t.id))) return false; }
     else if ($('#so-tema').checked && !it.temas.length) return false;
     if (txt && !Motor.normalizar(it.chave + ' ' + it.ementa + ' ' + (it.autores || []).join(' ')).includes(txt)) return false;
@@ -592,7 +618,7 @@ function desenharFiltroTemas(){
     const soma = base.filter(it => it.temas.some(t => TEMA[t.id].caderno === c.id)).length;
     const aberto = abertos.has(c.id) || temas.some(t => estado.temas.has(t.id));
     return `<details class="grupo" data-c="${c.id}" ${aberto ? 'open' : ''}>
-      <summary><span><b>${esc(c.subtitulo)}</b><small>Caderno ${esc(c.nome)}</small></span>${temDados ? `<span class="n">${fmt(soma)}</span>` : ''}</summary>
+      <summary><span><b>${esc(c.subtitulo)}</b></span>${temDados ? `<span class="n">${fmt(soma)}</span>` : ''}</summary>
       <div class="itens">${temas.map(t => `<label class="opt ${temDados && !n[t.id] ? 'vazio' : ''}"><span><input type="checkbox" data-tema="${t.id}" ${estado.temas.has(t.id) ? 'checked' : ''}>${esc(t.tema)}</span>${temDados ? `<span class="n">${fmt(n[t.id] || 0)}</span>` : ''}</label>`).join('')}</div>
     </details>`;
   }).join('');
@@ -630,7 +656,7 @@ function cartoesPromessas(){
       const k = chavePromessa(c.id, i);
       const n = temDados ? contarPromessa(pr, base) : 0;
       const faz = temDados
-        ? `<p><strong>${fmt(n)}</strong> ${n === 1 ? 'projeto' : 'projetos'} ${quemPropoe()}${qualTriagem()} mostram ${esc(pr.olhe)}.</p>
+        ? `<p><strong>${fmt(n)}</strong> ${n === 1 ? 'projeto' : 'projetos'} ${quemPropoe()}${qualTriagem(true)} mostram ${esc(pr.olhe)}.</p>
            <button type="button" data-prom="${k}" ${n ? '' : 'disabled'}>${n ? 'Ver os projetos' : 'Nada no período'}</button>`
         : `<p>Veja nos projetos do Congresso ${esc(pr.olhe)}.</p>
            <button type="button" data-prom="${k}">Buscar os projetos</button>`;
@@ -665,7 +691,7 @@ function contraste(lista){
   const pr = promessaDe(estado.promessaSel); if (!pr) return '';
   return `<div class="contraste" id="contraste">
     <div class="c-diz"><p class="rot">Flávio promete</p><blockquote>“${esc(pr.trecho)}”</blockquote><p class="pag">Programa de governo, p. ${pr.pagina}</p></div>
-    <div class="c-faz"><p class="rot">Mas olha o que ${$('#so-flavio').checked ? 'ele propõe' : 'eles propõem'}</p><p><strong>${fmt(lista.length)}</strong> ${lista.length === 1 ? 'projeto' : 'projetos'} ${quemPropoe()}${qualTriagem()}, apresentados ${periodoTexto()}, mostram ${esc(pr.olhe)}. Leia as ementas, marque os que contradizem a promessa e peça a avaliação do texto integral.</p></div>
+    <div class="c-faz"><p class="rot">Mas olha o que ${$('#so-flavio').checked ? 'ele propõe' : 'eles propõem'}</p><p><strong>${fmt(lista.length)}</strong> ${lista.length === 1 ? 'projeto' : 'projetos'} ${quemPropoe()}${qualTriagem(true)}, apresentados ${periodoTexto()}, mostram ${esc(pr.olhe)}. Leia as ementas, marque os que contradizem a promessa e peça a avaliação do texto integral.</p></div>
   </div>`;
 }
 
@@ -854,34 +880,50 @@ function desenharLista(lista){
 }
 
 // ---------------------------------------------------------------- triagem por IA
-const NOME_TRI = { conflito: 'Provável conflito', texto: 'Conferir no texto', sem: 'Sem conflito aparente' };
+const NOME_TRI = { com: 'Com relação ao programa', provavel: 'Provável relação ao programa', sem: 'Sem relação ao programa' };
+const NOME_DIR = { ameaca: 'Ameaça direitos', amplia: 'Amplia direitos', neutro: 'Neutro para direitos', incerto: 'Efeito incerto' };
 function seloTriagem(it){
   const t = TRI[it.chave]; if (!t) return '';
-  return `<span class="tri tri-${t.c}" title="Triagem por IA feita sobre a ementa">${NOME_TRI[t.c]}</span>`;
+  const d = NOME_DIR[t.d] ? `<span class="tri tri-${t.d}" title="Efeito sobre direitos, segundo a triagem por IA da ementa">${NOME_DIR[t.d]}</span>` : '';
+  const c = NOME_TRI[t.c] && t.c !== 'sem' ? `<span class="tri tri-${t.c}" title="Relação com o programa de Flávio, segundo a triagem por IA da ementa">${NOME_TRI[t.c]}</span>` : '';
+  return d + c;
 }
 // Só entram na triagem os projetos ligados a algum tema e que não são homenagens.
 const candidatosTriagem = () => estado.itens.filter(it => it.temas.length && !it.homenagem);
 
+// Tabela cruzada da triagem. Cada projeto aparece numa única célula, e os números consideram
+// os mesmos filtros da lista (partidos, temas, Flávio autor), exceto a própria triagem.
 function painelTriagem(){
-  const cand = candidatosTriagem();
-  const n = { conflito: 0, texto: 0, sem: 0 };
-  let faltam = 0;
-  cand.forEach(it => { const t = TRI[it.chave]; if (t) n[t.c]++; else faltam++; });
-  const feitos = cand.length - faltam;
-  const opcao = (v, rot) => `<button type="button" class="chip" data-trifiltro="${v}" aria-pressed="${triagem.filtro === v}" ${!feitos && v !== 'todos' ? 'disabled' : ''}>${rot}</button>`;
+  const pendentesBusca = candidatosTriagem().filter(it => !TRI[it.chave]).length;
+  const base = estado.opc ? filtrados(baseFiltrada(true)) : [];
+  const D = ['ameaca', 'incerto', 'neutro', 'amplia'], C = ['com', 'provavel', 'sem'];
+  const ROT_D = { ameaca: 'Ameaçam direitos', incerto: 'Efeito incerto', neutro: 'Neutros', amplia: 'Ampliam direitos' };
+  const ROT_C = { com: 'Com relação', provavel: 'Provável relação', sem: 'Sem relação' };
+  const cont = {}, totD = {}, totC = {}; let triados = 0, semTriagem = 0;
+  base.forEach(it => {
+    const t = TRI[it.chave];
+    if (!t || !D.includes(t.d) || !C.includes(t.c)) { semTriagem++; return; }
+    cont[t.d + '|' + t.c] = (cont[t.d + '|' + t.c] || 0) + 1;
+    totD[t.d] = (totD[t.d] || 0) + 1; totC[t.c] = (totC[t.c] || 0) + 1; triados++;
+  });
+  const sel = (d, c) => (triagem.fd === d || (d === 'todos' && triagem.fd === 'todos')) && (triagem.fc === c || (c === 'todos' && triagem.fc === 'todos'));
+  const cel = (d, c, n, extra) => n
+    ? `<td class="${extra || ''} ${sel(d, c) ? 'sel' : ''}" data-fd="${d}" data-fc="${c}" tabindex="0" title="Mostrar estes ${n} projetos">${fmt(n)}</td>`
+    : `<td class="zero ${extra || ''}">0</td>`;
+  const tabela = triados ? `<table class="tri-tabela">
+      <thead><tr><th><span class="sr">Direitos</span></th>${C.map(c => `<th scope="col" data-fd="todos" data-fc="${c}" class="${triagem.fd === 'todos' && triagem.fc === c ? 'sel' : ''}">${ROT_C[c]}<br>ao programa de Flávio</th>`).join('')}<th scope="col">Total</th></tr></thead>
+      <tbody>${D.map(d => `<tr><th scope="row" data-fd="${d}" data-fc="todos" class="${triagem.fd === d && triagem.fc === 'todos' ? 'sel' : ''}">${ROT_D[d]}</th>${C.map(c => cel(d, c, cont[d + '|' + c] || 0, d === 'ameaca' ? 'forte' : '')).join('')}${cel(d, 'todos', totD[d] || 0, 'tot')}</tr>`).join('')}</tbody>
+      <tfoot><tr><th scope="row">Total</th>${C.map(c => cel('todos', c, totC[c] || 0, 'tot')).join('')}${cel('todos', 'todos', triados, 'tot')}</tr></tfoot>
+    </table>
+    <p class="tri-nota">Cada projeto conta uma única vez. Clique num número, numa linha ou numa coluna para filtrar a lista.${semTriagem ? ` ${fmt(semTriagem)} ${semTriagem === 1 ? 'projeto da lista ainda não foi triado' : 'projetos da lista ainda não foram triados'}.` : ''}</p>` : '';
   return `<h3>Triagem por IA</h3>
-    <p>A IA lê a ementa de cada projeto e separa os que provavelmente conflitam com os Cadernos do Futuro. É uma triagem indicativa. Antes de divulgar um caso, marque o projeto e peça a avaliação do texto integral.</p>
-    ${feitos ? `<div class="tri-contas">
-      <span><b style="color:var(--red)">${fmt(n.conflito)}</b>prováveis conflitos</span>
-      <span><b>${fmt(n.texto)}</b>a conferir no texto</span>
-      <span><b>${fmt(n.sem)}</b>sem conflito aparente</span>
-      ${faltam ? `<span><b>${fmt(faltam)}</b>ainda não triados</span>` : ''}
-    </div>` : ''}
+    <p>A IA lê a ementa e indica o efeito sobre direitos e a relação com o programa de Flávio. Confira antes de divulgar.</p>
+    ${tabela}
     <div class="tri-acoes">
       ${triagem.rodando
         ? `<button type="button" class="btn-sec" id="tri-parar">Parar a triagem</button>`
-        : `<button type="button" class="btn-go" id="tri-rodar" ${faltam ? '' : 'disabled'}>${faltam ? `Triar ${faltam === 1 ? 'o projeto' : `os ${fmt(faltam)} projetos`} com IA` : 'Todos os projetos já foram triados'}</button>`}
-      <div class="tri-filtro" role="group" aria-label="Filtrar pela triagem">Mostrar ${opcao('todos', 'Todos')}${opcao('conflito', 'Só prováveis conflitos')}${opcao('conflito-texto', 'Conflitos e a conferir')}</div>
+        : `<button type="button" class="btn-go" id="tri-rodar" ${pendentesBusca ? '' : 'disabled'}>${pendentesBusca ? `Triar ${pendentesBusca === 1 ? 'o projeto' : `os ${fmt(pendentesBusca)} projetos`} com IA` : 'Todos os projetos já foram triados'}</button>`}
+      ${triagem.fd !== 'todos' || triagem.fc !== 'todos' ? '<button type="button" class="btn-sec" data-fd="todos" data-fc="todos">Mostrar todos os projetos</button>' : ''}
     </div>
     <div class="tri-status ${triagem.erro ? 'erro' : ''}" role="status" aria-live="polite">${triagem.rodando
       ? `Triando ${fmt(triagem.feitos)} de ${fmt(triagem.total)} projetos. Pode continuar navegando.`
@@ -935,11 +977,14 @@ async function rodarTriagem(){
   const faltam = candidatosTriagem().filter(it => !TRI[it.chave]).length;
   triagem.rodando = false;
   triagem.erro = erroGeral || (faltam && !triagem.parar ? `${fmt(faltam)} projetos não puderam ser triados agora. Clique de novo para tentar.${ultimoMotivo ? ` Resposta do serviço: ${ultimoMotivo.slice(0, 220)}` : ''}` : '');
-  // Ao terminar a primeira triagem, a página passa a mostrar só os prováveis conflitos.
-  if (triagem.filtro === 'todos' && !erroGeral && candidatosTriagem().some(it => TRI[it.chave] && TRI[it.chave].c === 'conflito')) triagem.filtro = 'conflito';
+  // Ao terminar a primeira triagem, a página passa a mostrar só os projetos que ameaçam direitos.
+  if (triagem.fd === 'todos' && triagem.fc === 'todos' && !erroGeral && candidatosTriagem().some(it => TRI[it.chave] && TRI[it.chave].d === 'ameaca')) triagem.fd = 'ameaca';
   estado.pagina = 1;
   desenhar();
 }
+document.addEventListener('keydown', e => {
+  if ((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('#triagem td[data-fd]')) { e.preventDefault(); e.target.click(); }
+});
 function mensagemErroTri(codigo, status){
   if (codigo === 'sem_chave') return 'A triagem ainda não está ativada. Falta cadastrar a chave ANTHROPIC_API_KEY no Worker do Cloudflare.';
   if (codigo === 'chave_recusada') return 'A chave da API da Anthropic cadastrada no Worker foi recusada. Confira a chave no Cloudflare.';
@@ -950,21 +995,26 @@ function mensagemErroTri(codigo, status){
 document.addEventListener('click', e => {
   if (e.target.id === 'tri-rodar') rodarTriagem();
   if (e.target.id === 'tri-parar') { triagem.parar = true; e.target.disabled = true; e.target.textContent = 'Parando'; }
-  const f = e.target.closest && e.target.closest('button[data-trifiltro]');
-  if (f && !f.disabled) { triagem.filtro = f.dataset.trifiltro; estado.pagina = 1; desenhar(); }
+  const f = e.target.closest && e.target.closest('#triagem [data-fd][data-fc]');
+  if (f) {
+    const igual = triagem.fd === f.dataset.fd && triagem.fc === f.dataset.fc;
+    triagem.fd = igual ? 'todos' : f.dataset.fd; triagem.fc = igual ? 'todos' : f.dataset.fc;
+    estado.pagina = 1; desenhar();
+  }
 });
 
 // ---------------------------------------------------------------- avaliação por IA
-const NOME_POSICAO = { conflita: 'Conflita com o programa', converge: 'Converge com o programa', misto: 'Efeitos mistos', neutro: 'Neutro' };
+const NOME_POSICAO = { conflita: 'Ameaça direitos', converge: 'Amplia direitos', misto: 'Efeitos mistos', neutro: 'Neutro' };
+const CLASSE_POSICAO = { conflita: 'ameaca', converge: 'favoravel', misto: 'misto', neutro: 'neutro' };
 function painelAvaliacao(it){
-  if (estado.avaliando.has(it.chave)) return '<div class="aval-andamento" role="status">Lendo o texto integral e avaliando à luz dos Cadernos do Futuro. Leva de 20 a 60 segundos.</div>';
+  if (estado.avaliando.has(it.chave)) return '<div class="aval-andamento" role="status">Lendo o texto integral do projeto. Leva de 20 a 60 segundos.</div>';
   if (estado.erroAval[it.chave]) return `<div class="aval-erro">${esc(estado.erroAval[it.chave])}</div>`;
   const r = AVAL[it.chave]; if (!r) return '';
   const a = r.avaliacao || {};
   const pos = NOME_POSICAO[a.posicao] ? a.posicao : 'neutro';
   const lista = xs => (Array.isArray(xs) && xs.length) ? `<ul>${xs.map(x => `<li>${esc(x)}</li>`).join('')}</ul>` : '';
   return `<section class="aval" aria-label="Avaliação">
-    <span class="selo ${pos}">${NOME_POSICAO[pos]}${a.intensidade && pos !== 'neutro' ? `, intensidade ${esc(a.intensidade === 'media' ? 'média' : a.intensidade)}` : ''}</span>
+    <span class="selo ${CLASSE_POSICAO[pos]}">${NOME_POSICAO[pos]}${a.intensidade && pos !== 'neutro' ? `, intensidade ${esc(a.intensidade === 'media' ? 'média' : a.intensidade)}` : ''}</span>
     <span class="meta-aval">Avaliação por IA feita sobre ${esc(r.fonte || 'o texto')} em ${dataBR(r.data)}, confiança ${esc(a.confianca === 'media' ? 'média' : (a.confianca || 'não informada'))}.${r.urlTexto ? ` <a href="${esc(r.urlTexto)}" target="_blank" rel="noopener">Ler o texto integral</a>` : ''}</span>
     ${a.resumo ? `<p><span class="rotulo">O que o projeto faz.</span> ${esc(a.resumo)}</p>` : ''}
     ${a.argumento ? `<p><span class="rotulo">Por quê.</span> ${esc(a.argumento)}</p>` : ''}
@@ -988,7 +1038,7 @@ function desenharBarra(){
   if (barra.hidden) return;
   const emCurso = estado.avaliando.size;
   barra.innerHTML = `<p>${n} ${n === 1 ? 'projeto marcado' : 'projetos marcados'}${emCurso ? `, ${emCurso} em avaliação` : ''}
-      <small>A IA lê o texto integral de cada projeto e o compara com as diretrizes dos Cadernos do Futuro. Projetos já avaliados não são cobrados de novo.</small></p>
+      <small>A IA lê o texto integral de cada projeto e resume o que ele muda de fato. Projetos já avaliados não são cobrados de novo.</small></p>
     <button type="button" class="btn-go" id="avaliar" ${pendentes.length && !emCurso ? '' : 'disabled'}>${pendentes.length ? `Avaliar ${pendentes.length === 1 ? 'o marcado' : `os ${pendentes.length} marcados`}` : 'Todos já avaliados'}</button>
     <button type="button" class="btn-sec" id="desmarcar">Desmarcar todos</button>`;
 }
@@ -1061,7 +1111,7 @@ async function carregarAutores(pag){
 
 function baixarCSV(lista){
   const cab = ['projeto', 'casa', 'data_apresentacao', 'partidos', 'siglas', 'partido_atual_do_autor', 'autores', 'areas', 'temas', 'termos_encontrados', 'homenagem', 'ementa', 'link',
-    'triagem', 'triagem_motivo', 'avaliacao_posicao', 'avaliacao_intensidade', 'avaliacao_resumo', 'avaliacao_argumento', 'avaliacao_confianca'];
+    'triagem_direitos', 'triagem_programa_flavio', 'triagem_motivo', 'avaliacao_posicao', 'avaliacao_intensidade', 'avaliacao_resumo', 'avaliacao_argumento', 'avaliacao_confianca'];
   const q = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
   const linhas = lista.map(it => {
     const ts = temasDoItem(it);
@@ -1069,7 +1119,7 @@ function baixarCSV(lista){
       it.viaDeputados.join('; '), (it.autores || []).join('; '), [...new Set(ts.map(t => CADERNO[TEMA[t.id].caderno].subtitulo))].join('; '),
       ts.map(t => TEMA[t.id].tema).join('; '), [...new Set(ts.flatMap(t => t.termos))].join('; '),
       it.homenagem ? 'sim' : 'não', it.ementa, it.link,
-      TRI[it.chave] ? NOME_TRI[TRI[it.chave].c] : '', TRI[it.chave] ? TRI[it.chave].m : '',
+      TRI[it.chave] ? NOME_DIR[TRI[it.chave].d] || '' : '', TRI[it.chave] ? NOME_TRI[TRI[it.chave].c] || '' : '', TRI[it.chave] ? TRI[it.chave].m : '',
       ...(a => [a.posicao, a.intensidade, a.resumo, a.argumento, a.confianca])((AVAL[it.chave] || {}).avaliacao || {})].map(q).join(';');
   });
   const blob = new Blob(['﻿' + cab.join(';') + '\n' + linhas.join('\n')], { type: 'text/csv;charset=utf-8' });
