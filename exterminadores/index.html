@@ -2,6 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
+<script>if (/\/exterminadores$/.test(location.pathname)) location.replace(location.pathname + '/' + location.search + location.hash);</script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Os exterminadores do futuro</title>
 <meta name="description" content="Flávio diz uma coisa e propõe outra. Compare o que ele promete no programa de governo com os projetos que ele e seus aliados apresentam no Congresso.">
@@ -336,10 +337,14 @@ footer p{max-width:90ch;margin:0 0 6px}
   </div>
 </footer>
 
-<script src="config.js?v=20261013f"></script>
-<script src="taxonomia.js?v=20261013f"></script>
-<script src="promessas.js?v=20261013f"></script>
-<script src="motor.js?v=20261013f"></script>
+<script src="config.js?v=20261013g"></script>
+<script>
+// Endereço padrão do serviço intermediário, usado se o config.js não for encontrado ou vier vazio.
+if (!window.MONITOR_PROXY) window.MONITOR_PROXY = 'https://exterminadores-proxy.gorgen-james.workers.dev';
+</script>
+<script src="taxonomia.js?v=20261013g"></script>
+<script src="promessas.js?v=20261013g"></script>
+<script src="motor.js?v=20261013g"></script>
 <script>
 (function(){
 'use strict';
@@ -481,7 +486,7 @@ async function executarBusca(opc, completar){
       : e.message === 'resposta_nao_json'
         ? 'O endereço em config.js responde com uma página, e não com dados. Confira se ali está o Worker que contém o código do worker.js.'
         : e.message === 'origem_recusada'
-          ? 'O serviço intermediário recusou esta página. No Cloudflare, confira se ORIGENS_PERMITIDAS contém exatamente https://jamesgorgen.github.io e publique de novo.'
+          ? 'O serviço intermediário recusou esta página. No Cloudflare, confira se ORIGENS_PERMITIDAS contém o endereço desta página (' + location.origin + ') e publique de novo.'
           : 'As APIs do Congresso não estão respondendo agora. Tente de novo em alguns minutos.';
     return;
   }
