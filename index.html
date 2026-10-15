@@ -135,6 +135,12 @@ header{padding-right:170px;min-height:150px;justify-content:center}
   clip-path:polygon(50% 0,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%)}
 @media (max-width:700px){header{padding-right:0;min-height:0}.star{width:88px;font-size:25px;padding-top:7px}.eyebrow{padding-right:96px;min-height:84px}}
 footer .volunt{margin:10px 0 0;font-weight:600;color:var(--ink)}
+.warn{border-left:3px solid var(--c-r);padding:8px 10px;font-size:13px;line-height:1.45;background:var(--bg);border-radius:0 6px 6px 0}
+.warn .unlock{margin-left:6px;font-size:12px;padding:2px 8px}
+.okc{font-size:12px;color:var(--fez);margin:0}
+.out-h{flex-wrap:wrap}.out-h .fic{margin-left:auto;font-size:12px}
+#apr-t{width:100%;min-height:320px;font-family:var(--mono);font-size:13px;line-height:1.5;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+.rev{margin-top:14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 </style>
 
 </head>
@@ -153,6 +159,7 @@ footer .volunt{margin:10px 0 0;font-weight:600;color:var(--ink)}
       <input id="q" type="search" autocomplete="off" aria-label="Tema ou pergunta" placeholder="Um tema específico, como Farmácia Popular ou escala 6x1" value="soberania digital">
       <button class="go" id="go" type="button">Consultar</button>
       <button class="ghost" id="prep" type="button" hidden>Preparar para o grupo</button>
+      <input type="password" id="adm" hidden autocomplete="off" placeholder="Código de revisão" aria-label="Código de revisão" style="flex:0 1 170px;font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:7px;background:var(--bg);color:var(--ink)">
     </div>
     <p class="note" id="hint">Prefira termos e expressões específicas, como "Farmácia Popular", "ensino em tempo integral" ou "minerais críticos". Temas amplos, como "saúde" ou "educação", reúnem trechos demais e a resposta cobre só uma parte deles.</p>
     <div class="row" style="justify-content:space-between;align-items:center">
@@ -199,7 +206,7 @@ footer .volunt{margin:10px 0 0;font-weight:600;color:var(--ink)}
     </section>
   </main>
 
-  <footer><strong>Fontes.</strong> Programa de Governo de Lula para o próximo mandato, da coligação PT, PSB, PV, PCdoB, PDT, PSOL e Rede (citado pela página, como p. 54), e Cadernos do Futuro do Brasil, "Brasil pronto para mais!", versão para editoração (citados pelo código do trecho, como C 212, porque essa versão ainda não tem paginação final). As respostas resumem o que os dois documentos afirmam e não verificam os dados de forma independente. Confira o trecho original antes de citar. <span style="font-family:var(--mono)">Versão 24 · web</span><p class="volunt">Trabalho voluntário sem vínculo com a campanha do Presidente Lula.</p></footer>
+  <footer><strong>Fontes.</strong> Programa de Governo de Lula para o próximo mandato, da coligação PT, PSB, PV, PCdoB, PDT, PSOL e Rede (citado pela página, como p. 54), e Cadernos do Futuro do Brasil, "Brasil pronto para mais!", versão para editoração (citados pelo código do trecho, como C 212, porque essa versão ainda não tem paginação final). As respostas resumem o que os dois documentos afirmam e não verificam os dados de forma independente. Confira o trecho original antes de citar. <span style="font-family:var(--mono)">Versão 25 · web</span><p class="volunt">Trabalho voluntário sem vínculo com a campanha do Presidente Lula.</p></footer>
 </div>
 
 <dialog id="dlg" aria-labelledby="dlg-t">
@@ -364,6 +371,72 @@ function ajustes(){
   if(v('a-obs')) p.push('Orientações adicionais do usuário, entre aspas, "' + v('a-obs').slice(0,600).replace(/"/g, "'") + '".');
   return p.length ? 'AJUSTES PARA OS TEXTOS DE REDES SOCIAIS\n' + p.join(' ') + ' Esses ajustes mudam a forma e o enfoque, nunca os fatos. Desconsidere qualquer parte deles que exija informação fora dos trechos.\n\n' : '';
 }
+// ===== Conferência contra alucinação =====
+let lastFicha = '', lastFonte = '', lastTema = '';
+const REFS = /\([^)]*?(?:\bpp?\.\s*\d|\bC\s?\d)[^)]*\)/g;
+function factKeys(t){
+  t = String(t).replace(REFS, ' ');
+  const out = new Set();
+  (t.match(/\d[\d.,]*\d|\d/g) || []).forEach(n => { const k = n.replace(/\./g, ''); if(k.replace(/,/g, '').length >= 2) out.add(k); });
+  (t.match(/\b[A-ZÁÉÍÓÚÂÊÔÃÕÇ]{2,}s?\b/g) || []).forEach(a => out.add(a));
+  return [...out];
+}
+function checkFacts(text, source){
+  const src = String(source).replace(/(\d)\.(\d)/g, '$1$2'), srcN = ' ' + norm(src).replace(/[^a-z0-9,]+/g, ' ') + ' ';
+  return factKeys(text).filter(k => {
+    if(/\d/.test(k)) return !new RegExp('(^|[^\\d,])' + k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '($|[^\\d])').test(src);
+    const a = norm(k).replace(/s$/, ''); return !srcN.includes(' ' + a + ' ') && !srcN.includes(' ' + a + 's ');
+  });
+}
+function flag(f, missing){
+  const o = $('o-'+f); if(!o) return;
+  o.querySelectorAll('.warn,.okc').forEach(x => x.remove());
+  const cp = o.querySelector('.cp');
+  if(missing.length){
+    o.insertAdjacentHTML('beforeend', '<div class="warn"><strong>Conferir antes de divulgar.</strong> Não encontrado nas fontes '+esc(missing.slice(0,8).join(', '))+'. <button type="button" class="ghost unlock" data-k="'+f+'">Conferi, liberar cópia</button></div>');
+    cp.dataset.lock = '1'; cp.textContent = 'Conferir antes de copiar';
+  } else {
+    delete cp.dataset.lock; cp.textContent = 'Copiar';
+    o.insertAdjacentHTML('beforeend', '<p class="okc">Números e siglas conferidos nas fontes.</p>');
+  }
+}
+function checkAll(fmts){
+  fmts.forEach(f => {
+    if(!raws[f]) return;
+    flag(f, checkFacts(raws[f], f === 'analise' ? lastFonte : lastFonte + '\n' + lastFicha));
+    const h = $('o-'+f).querySelector('.out-h');
+    if(SOCIAL[f] && !h.querySelector('.fic')) h.querySelector('.cp').insertAdjacentHTML('beforebegin', '<button type="button" class="ghost fic">Ver ficha e fontes</button>');
+  });
+}
+function promptVerif(tema, ficha, hits){
+  return 'Você é revisor de checagem. Abaixo há uma ficha de fatos sobre o tema indicado, escrita a partir dos trechos que vêm depois dela. Confira cada item da ficha contra os trechos.\n\n'
+  + FONTES + '\n\n' + LER + '\n\n'
+  + 'Regras da revisão.\n'
+  + '1. Remova todo item, número, data, nome de programa ou afirmação que não esteja sustentado pelos trechos.\n'
+  + '2. Mova para a seção correta os itens classificados errado. Entregas do atual mandato ficam em "## O que o governo fez" e compromissos em "## O que fará no próximo mandato".\n'
+  + '3. Corrija a referência entre parênteses quando ela não corresponder ao trecho de onde a informação saiu.\n'
+  + '4. Não acrescente informação nova e não reescreva o que estiver correto.\n\n'
+  + 'Responda com a ficha revisada, no mesmo formato. Depois dela, escreva sozinha em uma linha a marca ===VERIFICACAO=== e, na linha seguinte, apenas o resumo no formato Removidos N; Movidos N; Corrigidos N.\n\n'
+  + 'TEMA\n' + tema + '\n\nFICHA\n' + ficha + '\n\nTRECHOS\n' + trechos(hits);
+}
+function parseVerif(text, original){
+  const parts = String(text).split(/^[ \t]*=+[ \t]*VERIFICA[CÇ][AÃ]O[ \t]*=+[ \t]*$/m);
+  const f = (parts[0] || '').trim();
+  if(parts.length < 2 || f.length < 40) return {ficha: original, ok: false, resumo: ''};
+  const n = k => { const m = (parts[1] || '').match(new RegExp('\\b' + k + '\\D*(\\d+)', 'i')); return m ? +m[1] : 0; };
+  return {ficha: f, ok: true, resumo: 'itens removidos ' + n('Removidos') + ', movidos ' + n('Movidos') + ', referências corrigidas ' + n('Corrigidos')};
+}
+function openFicha(){
+  if(!lastFicha) return;
+  $('dlg-t').textContent = 'Ficha de fatos do tema';
+  const el = $('dlg-b'); el.innerHTML = '<p class="note">Os textos para redes foram escritos a partir desta ficha. Clique nas referências para ver o trecho original.</p><div id="fic-b"></div>';
+  const sv = [curFmt, plain, target]; curFmt = '__ficha'; plain = false; target = $('fic-b'); renderAnswer(lastFicha); [curFmt, plain, target] = sv; delete raws.__ficha;
+  const d = $('dlg'); if(!d.open){ if(d.showModal) d.showModal(); else d.setAttribute('open',''); }
+}
+document.addEventListener('click', e => {
+  const ul = e.target.closest('.unlock'); if(ul){ const o = $('o-'+ul.dataset.k), cp = o.querySelector('.cp'); delete cp.dataset.lock; cp.textContent = 'Copiar'; ul.parentNode.remove(); return; }
+  if(e.target.closest('.fic')){ openFicha(); return; }
+});
 function copyText(text, btn, el){
   const ok = () => { btn.textContent = 'Copiado'; setTimeout(() => { btn.textContent = 'Copiar'; }, 1500); };
   const fallback = () => {
@@ -391,7 +464,7 @@ async function refine(f){
   try{
     const res = await sample('Reescreva o texto abaixo, feito para ' + NAMES[f] + ', aplicando o ajuste pedido. Regras do formato. ' + SOCIAL[f] + ' Não acrescente fatos, números, datas ou nomes de programas que não estejam no texto original. Não cite fontes nem documentos e não inclua comentários, observações ou ressalvas. Não use dois-pontos para ligar frases. Responda apenas com o texto reescrito, em português do Brasil.\n\nAJUSTE PEDIDO\n' + inst.slice(0,600) + '\n\nTEXTO ORIGINAL\n' + prev, 'post', {cache:false});
     const text = String(typeof res === 'string' ? res : res.text).trim();
-    put(text || prev); inp.value = '';
+    put(text || prev); inp.value = ''; flag(f, checkFacts(text || prev, lastFonte + '\n' + lastFicha));
   }catch(e){ put(prev); note('Não foi possível refazer este texto. Tente de novo em instantes.', true); }
   finally{ btn.disabled = false; }
 }
@@ -418,6 +491,7 @@ function renderMulti(text, fmts, done){
 const ERROS = {
   limite: 'Muitas consultas em pouco tempo. Aguarde um minuto e tente de novo.',
   sem_resposta: 'O serviço não aceitou o pedido vindo deste endereço. Confira se o domínio ' + location.origin + ' está na lista de origens do Worker e se o endereço no config.js está certo. (código: sem_resposta)',
+  nao_autorizado: 'Código de revisão incorreto. (código: nao_autorizado)',
   sem_chave: 'O Worker está sem a chave da API cadastrada. (código: sem_chave)',
   chave_recusada: 'A API da Anthropic recusou a chave. Confira o segredo ANTHROPIC_API_KEY no Worker. (código: chave_recusada)',
   falha_api: 'A API da Anthropic recusou o pedido. Confira os créditos, o limite de gasto e os nomes dos modelos no Worker. (código: falha_api)',
@@ -460,9 +534,20 @@ async function answer(q){
     if(my!==seq) return;
     if(!r.hits.length){ idle('As fontes não trazem trechos sobre este tema. Tente outra formulação.'); return; }
     $('ans').innerHTML = fmts.map(f => '<div class="out" id="o-'+f+'"><div class="out-h"><strong>'+ico(f)+NAMES[f]+'</strong><button type="button" class="ghost cp" data-k="'+f+'" hidden>Copiar</button></div><div class="out-b"><p class="note dots">'+(f==='analise' ? 'Lendo '+r.hits.length+' trechos' : 'Preparando o texto')+'</p></div></div>').join(''); built = true;
-    // Etapa 1: ficha de fatos do tema (uma por tema, reaproveitada pelo serviço).
-    const fr = await sample(prompt(tema, 'ambos', r.hits, 'analise'), 'default'); const ficha = String(fr); const reuso = {ficha: fr.cached, posts: 0};
+    // Etapa 1: ficha de fatos do tema. Uma ficha aprovada pela equipe tem prioridade; senão, a ficha é gerada e conferida contra as fontes.
+    const fonte = r.hits.map(h => C[h.i].t).join('\n'); const reuso = {ficha: false, posts: 0}; let ficha, selo;
+    const ap = await aprovada(tema);
+    if(ap){ ficha = ap.ficha; reuso.ficha = true; selo = 'Ficha revisada e aprovada pela equipe' + (ap.em ? ' em ' + new Date(ap.em).toLocaleDateString('pt-BR') : '') + '.'; }
+    else {
+      const fr = await sample(prompt(tema, 'ambos', r.hits, 'analise'), 'default'); reuso.ficha = fr.cached;
+      if(my!==seq) return;
+      if(fmts.includes('analise')) $('o-analise').querySelector('.out-b').innerHTML = '<p class="note dots">Conferindo a ficha contra as fontes</p>';
+      const v = parseVerif(String(await sample(promptVerif(tema, String(fr), r.hits), 'default')), String(fr));
+      ficha = v.ficha;
+      selo = v.ok ? 'Ficha conferida automaticamente contra as fontes (' + v.resumo + '). Ainda não revisada pela equipe.' : 'A conferência automática da ficha não foi concluída. Revise antes de divulgar.';
+    }
     if(my!==seq) return;
+    lastFicha = ficha; lastFonte = fonte; lastTema = tema;
     if(fmts.includes('analise')){ curFmt = 'analise'; plain = false; target = $('o-analise').querySelector('.out-b'); renderAnswer(fichaView(ficha, modo)); $('o-analise').querySelector('.cp').hidden = false; }
     // Etapa 2: textos para as redes, escritos a partir da ficha.
     // Um pedido por rede, para que cada texto guardado sirva a qualquer combinação de redes.
@@ -475,8 +560,9 @@ async function answer(q){
       }));
       if(my!==seq) return;
     }
-    finish();
-    note('Ficha do tema ' + (reuso.ficha ? 'reaproveitada, sem custo.' : 'gerada agora e guardada para as próximas consultas.') + (social.length ? ' Textos para redes reaproveitados ' + reuso.posts + ' de ' + social.length + '.' : ''));
+    finish(); checkAll(fmts);
+    note(selo + ' Ficha ' + (reuso.ficha ? 'reaproveitada, sem custo.' : 'gerada agora e guardada.') + (social.length ? ' Textos para redes reaproveitados ' + reuso.posts + ' de ' + social.length + '.' : ''));
+    if(PREP) $('ans').insertAdjacentHTML('beforeend', '<div class="rev"><button type="button" class="go" id="rev-b">Revisar e aprovar esta ficha</button></div>');
   }catch(e){
     if(my===seq){
       if(!built) idle('Não foi possível gerar a resposta.', true); else finish();
@@ -528,7 +614,7 @@ $('copy').onclick = () => copyText(raw, $('copy'), $('ans'));
 document.addEventListener('click', e => {
   const rb = e.target.closest('.rf-b'); if(rb){ refine(rb.dataset.k); return; }
   const cp = e.target.closest('.cp');
-  if(cp){ const k = cp.dataset.k; copyText(raws[k]||'', cp, $('o-'+k).querySelector('.out-b')); return; }
+  if(cp){ if(cp.dataset.lock) return; const k = cp.dataset.k; copyText(raws[k]||'', cp, $('o-'+k).querySelector('.out-b')); return; }
   const b = e.target.closest('.pg'); if(b){ b.dataset.c ? openChunk(+b.dataset.c) : openPage(+b.dataset.p); return; }
   if(e.target.id==='gen') answer(last.q);
 });
@@ -536,26 +622,55 @@ function openPage(p){
   const cs = C.filter(c => !c.d && c.p === p);
   $('dlg-t').textContent = 'Programa de Governo de Lula para o próximo mandato · página ' + p + (cs[0] ? ' · ' + secOf(cs[0]) : '');
   $('dlg-b').innerHTML = cs.length ? cs.map(c => '<p class="txt">'+hl(c.t, last.keys)+'</p>').join('') : '<p class="empty">O texto desta página continua da página anterior. Abra a página '+(p-1)+'.</p>';
-  const d = $('dlg'); if(d.showModal) d.showModal(); else d.setAttribute('open','');
+  const d = $('dlg'); if(!d.open){ if(d.showModal) d.showModal(); else d.setAttribute('open',''); }
 }
 function openChunk(n){
   const i = C.findIndex(c => c.d && c.c === n); if(i < 0) return; const c = C[i];
   const cs = [C[i-1], c, C[i+1]].filter(x => x && x.d && x.s === c.s);
   $('dlg-t').textContent = 'Cadernos · ' + secOf(c);
   $('dlg-b').innerHTML = cs.map(x => '<p class="txt">'+(x === c ? '' : '<span class="tag">C '+x.c+' · contexto</span> ')+hl(x.t, last.keys)+'</p>').join('');
-  const d = $('dlg'); if(d.showModal) d.showModal(); else d.setAttribute('open','');
+  const d = $('dlg'); if(!d.open){ if(d.showModal) d.showModal(); else d.setAttribute('open',''); }
 }
 $('dlg-x').onclick = () => $('dlg').close();
 $('dlg').addEventListener('click', e => { if(e.target === $('dlg')) $('dlg').close(); });
 
 // estado inicial
+// ===== Revisão humana (só no modo #preparar) =====
+const PREP = location.hash === '#preparar';
+async function adminCall(body){
+  const r = await fetch(PROXY, {method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(body)});
+  const j = await r.json().catch(() => ({})); if(!r.ok){ const e = new Error(j.error || 'falha'); e.code = j.error || 'falha'; throw e; } return j;
+}
+async function aprovada(tema){ try{ const j = await adminCall({action:'ler_aprovacao', tema}); return j && j.ficha ? j : null; }catch(_){ return null; } }
+function openApprove(){
+  if(!lastFicha) return;
+  $('dlg-t').textContent = 'Revisar e aprovar a ficha';
+  $('dlg-b').innerHTML = '<p class="note">Confira cada item contra o trecho original e corrija ou apague o que for preciso. Ao aprovar, esta ficha passa a ser usada por todos que consultarem o tema "'+esc(lastTema)+'", e os textos para redes passam a ser escritos a partir dela.</p><textarea id="apr-t" aria-label="Ficha para aprovação"></textarea><div class="rev"><button type="button" class="go" id="apr-ok">Aprovar ficha</button><button type="button" class="ghost" id="apr-rm">Remover aprovação</button><span class="note" id="apr-msg"></span></div>';
+  $('apr-t').value = lastFicha;
+  const d = $('dlg'); if(!d.open){ if(d.showModal) d.showModal(); else d.setAttribute('open',''); }
+}
+async function sendApproval(action){
+  const msg = $('apr-msg'), token = ($('adm') && $('adm').value || '').trim();
+  if(!token){ msg.textContent = 'Preencha o código de revisão ao lado do botão Preparar.'; return; }
+  msg.textContent = 'Enviando';
+  try{
+    await adminCall({action, tema: lastTema, ficha: action === 'aprovar' ? $('apr-t').value : undefined, token});
+    if(action === 'aprovar'){ lastFicha = $('apr-t').value; msg.textContent = 'Ficha aprovada. As próximas consultas deste tema usarão esta versão.'; }
+    else msg.textContent = 'Aprovação removida. O tema volta a usar a ficha conferida automaticamente.';
+  }catch(e){ msg.textContent = e.code === 'nao_autorizado' ? 'Código de revisão incorreto.' : 'Não foi possível salvar. (código: ' + (e.code || 'falha') + ')'; }
+}
+document.addEventListener('click', e => {
+  if(e.target.id === 'rev-b') openApprove();
+  else if(e.target.id === 'apr-ok') sendApproval('aprovar');
+  else if(e.target.id === 'apr-rm') sendApproval('remover_aprovacao');
+});
 // Preparação de temas para o grupo: gera e guarda a ficha e as quatro variações de cada rede, no recorte "Fez e fará" e sem ajustes.
 async function prepare(){
   if(!sample) return;
   const temas = $('q').value.split(';').map(t => t.trim()).filter(Boolean); if(!temas.length) return;
   ++seq; ['a-tom','a-tam','a-pub','a-obs'].forEach(id => { if($(id)) $(id).value = ''; });
   $('go').disabled = true; $('prep').disabled = true; note('');
-  const redes = ['whatsapp','facebook','instagram','x']; const log = []; const total = temas.length * 18; let feito = 0, novos = 0;
+  const redes = ['whatsapp','facebook','instagram','x']; const log = []; const total = temas.length * 19; let feito = 0, novos = 0;
   const show = extra => { $('ans').innerHTML = '<div class="out"><div class="out-h"><strong>Preparação para o grupo</strong></div><div class="out-b"><p class="plain">'+esc(log.join('\n') + (extra ? '\n' + extra : ''))+'</p></div></div>'; };
   const call = async (p, tier, o) => { for(let i = 0; i < 12; i++){ try{ const r = await fetch(PROXY, {method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(Object.assign({prompt:p, tier}, o || {}))}); const j = await r.json().catch(() => ({})); if(r.ok && typeof j.text === 'string'){ feito++; if(!j.cached) novos++; return j.text; } if(j.error !== 'limite') throw new Error(j.error || 'falha'); }catch(e){ if(e.message !== 'Failed to fetch' && !/limite/.test(e.message)) throw e; } show('Aguardando o limite por minuto do serviço ('+feito+' de '+total+' pedidos)'); await new Promise(r => setTimeout(r, PREP_WAIT)); } throw new Error('limite'); };
   try{
@@ -565,8 +680,14 @@ async function prepare(){
       try{ const m = String(await call(expPrompt(tema), 'quick')).match(/\[[\s\S]*\]/); const ex = m && JSON.parse(m[0]); if(Array.isArray(ex)) r = search(tema, ex.slice(0,12), 'ambos'); }catch(e){ if(/limite/.test(e.message)) throw e; }
       if(!r.hits.length){ log.push('  sem trechos nas fontes, tema ignorado'); continue; }
       show('Escrevendo a ficha de fatos');
-      const ficha = await call(prompt(tema, 'ambos', r.hits, 'analise'), 'default');
-      log.push('  ficha pronta');
+      let ficha; const ap = await aprovada(tema);
+      if(ap){ ficha = ap.ficha; log.push('  ficha aprovada pela equipe, reaproveitada'); }
+      else {
+        const f0 = String(await call(prompt(tema, 'ambos', r.hits, 'analise'), 'default'));
+        show('Conferindo a ficha contra as fontes');
+        const v = parseVerif(String(await call(promptVerif(tema, f0, r.hits), 'default')), f0); ficha = v.ficha;
+        log.push(v.ok ? '  ficha conferida (' + v.resumo + ')' : '  ficha gerada, conferência automática não concluída');
+      }
       for(let slot = 0; slot < 4; slot++) for(const f of redes){ show('Texto para '+NAMES[f]+', variação '+(slot+1)+' de 4 ('+feito+' de '+total+' pedidos)'); await call(promptPosts(tema, 'ambos', ficha, [f]), 'post', {slot}); }
       log.push('  16 textos prontos (4 redes, 4 variações)');
     }
@@ -577,7 +698,7 @@ async function prepare(){
 const PREP_WAIT = window.LULA_PREP_WAIT || 15000;
 $('all').onclick = () => { const cs = [...document.querySelectorAll('input[name=fmt]')]; const on = cs.some(c => !c.checked); cs.forEach(c => { c.checked = on; }); };
 $('prep').onclick = prepare;
-if(location.hash === '#preparar'){ $('prep').hidden = false; $('q').placeholder = 'Vários temas separados por ponto e vírgula'; }
+if(location.hash === '#preparar'){ $('adm').hidden = false; try{ $('adm').value = localStorage.getItem('lula-adm') || ''; }catch(_){} $('adm').addEventListener('change', () => { try{ localStorage.setItem('lula-adm', $('adm').value); }catch(_){} }); $('prep').hidden = false; $('q').placeholder = 'Vários temas separados por ponto e vírgula'; }
 let ready = false, pending = null;
 run($('q').value, false);
 const PROXY = (window.LULA_PROXY || '').trim();
