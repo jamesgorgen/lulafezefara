@@ -206,7 +206,7 @@ footer .volunt{margin:10px 0 0;font-weight:600;color:var(--ink)}
     </section>
   </main>
 
-  <footer><strong>Fontes.</strong> Programa de Governo de Lula para o próximo mandato, da coligação PT, PSB, PV, PCdoB, PDT, PSOL e Rede (citado pela página, como p. 54), e Cadernos do Futuro do Brasil, "Brasil pronto para mais!", versão para editoração (citados pelo código do trecho, como C 212, porque essa versão ainda não tem paginação final). As respostas resumem o que os dois documentos afirmam e não verificam os dados de forma independente. Confira o trecho original antes de citar. <span style="font-family:var(--mono)">Versão 25 · web</span><p class="volunt">Trabalho voluntário sem vínculo com a campanha do Presidente Lula.</p></footer>
+  <footer><strong>Fontes.</strong> Programa de Governo de Lula para o próximo mandato, da coligação PT, PSB, PV, PCdoB, PDT, PSOL e Rede (citado pela página, como p. 54), e Cadernos do Futuro do Brasil, "Brasil pronto para mais!", versão para editoração (citados pelo código do trecho, como C 212, porque essa versão ainda não tem paginação final). As respostas resumem o que os dois documentos afirmam e não verificam os dados de forma independente. Confira o trecho original antes de citar. <span style="font-family:var(--mono)">Versão 26 · web</span><p class="volunt">Trabalho voluntário sem vínculo com a campanha do Presidente Lula.</p></footer>
 </div>
 
 <dialog id="dlg" aria-labelledby="dlg-t">
@@ -375,7 +375,7 @@ function ajustes(){
 let lastFicha = '', lastFonte = '', lastTema = '';
 const REFS = /\([^)]*?(?:\bpp?\.\s*\d|\bC\s?\d)[^)]*\)/g;
 function factKeys(t){
-  t = String(t).replace(REFS, ' ');
+  t = String(t).replace(REFS, ' ').replace(/\bpp?\.\s*\d+(?:\s*[-–,e]\s*\d+)*/gi, ' ').replace(/\bp[aá]g(?:ina)?s?\.?\s*\d+/gi, ' ').replace(/\bC\s?\d+\b/g, ' ');
   const out = new Set();
   (t.match(/\d[\d.,]*\d|\d/g) || []).forEach(n => { const k = n.replace(/\./g, ''); if(k.replace(/,/g, '').length >= 2) out.add(k); });
   (t.match(/\b[A-ZÁÉÍÓÚÂÊÔÃÕÇ]{2,}s?\b/g) || []).forEach(a => out.add(a));
@@ -415,14 +415,16 @@ function promptVerif(tema, ficha, hits){
   + '1. Remova todo item, número, data, nome de programa ou afirmação que não esteja sustentado pelos trechos.\n'
   + '2. Mova para a seção correta os itens classificados errado. Entregas do atual mandato ficam em "## O que o governo fez" e compromissos em "## O que fará no próximo mandato".\n'
   + '3. Corrija a referência entre parênteses quando ela não corresponder ao trecho de onde a informação saiu.\n'
-  + '4. Não acrescente informação nova e não reescreva o que estiver correto.\n\n'
-  + 'Responda com a ficha revisada, no mesmo formato. Depois dela, escreva sozinha em uma linha a marca ===VERIFICACAO=== e, na linha seguinte, apenas o resumo no formato Removidos N; Movidos N; Corrigidos N.\n\n'
+  + '4. Não acrescente informação nova e não reescreva o que estiver correto.\n'
+  + '5. Se algum item da ficha estiver incompleto ou terminar cortado, remova o item inteiro.\n\n'
+  + 'Formato da resposta, obrigatório. A primeira linha é a marca ===FICHA===, sozinha. Em seguida vem a ficha revisada, no mesmo formato da original, começando pelo parágrafo de síntese. Depois, sozinha em uma linha, a marca ===VERIFICACAO=== e, na linha seguinte, apenas o resumo no formato Removidos N; Movidos N; Corrigidos N. Não escreva nada antes da marca ===FICHA===. Comentários, explicações e observações sobre a revisão são proibidos dentro da ficha.\n\n'
   + 'TEMA\n' + tema + '\n\nFICHA\n' + ficha + '\n\nTRECHOS\n' + trechos(hits);
 }
 function parseVerif(text, original){
-  const parts = String(text).split(/^[ \t]*=+[ \t]*VERIFICA[CÇ][AÃ]O[ \t]*=+[ \t]*$/m);
+  const t = String(text), a = t.search(/^[ \t]*=+[ \t]*FICHA[ \t]*=+[ \t]*$/m);
+  const parts = (a < 0 ? '' : t.slice(a).replace(/^[^\n]*\n/, '')).split(/^[ \t]*=+[ \t]*VERIFICA[CÇ][AÃ]O[ \t]*=+[ \t]*$/m);
   const f = (parts[0] || '').trim();
-  if(parts.length < 2 || f.length < 40) return {ficha: original, ok: false, resumo: ''};
+  if(a < 0 || parts.length < 2 || f.length < 40 || !/^#{1,4}\s/m.test(f)) return {ficha: original, ok: false, resumo: ''};
   const n = k => { const m = (parts[1] || '').match(new RegExp('\\b' + k + '\\D*(\\d+)', 'i')); return m ? +m[1] : 0; };
   return {ficha: f, ok: true, resumo: 'itens removidos ' + n('Removidos') + ', movidos ' + n('Movidos') + ', referências corrigidas ' + n('Corrigidos')};
 }
@@ -535,11 +537,11 @@ async function answer(q){
     if(!r.hits.length){ idle('As fontes não trazem trechos sobre este tema. Tente outra formulação.'); return; }
     $('ans').innerHTML = fmts.map(f => '<div class="out" id="o-'+f+'"><div class="out-h"><strong>'+ico(f)+NAMES[f]+'</strong><button type="button" class="ghost cp" data-k="'+f+'" hidden>Copiar</button></div><div class="out-b"><p class="note dots">'+(f==='analise' ? 'Lendo '+r.hits.length+' trechos' : 'Preparando o texto')+'</p></div></div>').join(''); built = true;
     // Etapa 1: ficha de fatos do tema. Uma ficha aprovada pela equipe tem prioridade; senão, a ficha é gerada e conferida contra as fontes.
-    const fonte = r.hits.map(h => C[h.i].t).join('\n'); const reuso = {ficha: false, posts: 0}; let ficha, selo;
+    const fonte = r.hits.map(h => C[h.i].t).join('\n'); const reuso = {ficha: false, posts: 0}; let ficha, selo, avisoCorte = false;
     const ap = await aprovada(tema);
     if(ap){ ficha = ap.ficha; reuso.ficha = true; selo = 'Ficha revisada e aprovada pela equipe' + (ap.em ? ' em ' + new Date(ap.em).toLocaleDateString('pt-BR') : '') + '.'; }
     else {
-      const fr = await sample(prompt(tema, 'ambos', r.hits, 'analise'), 'default'); reuso.ficha = fr.cached;
+      const fr = await sample(prompt(tema, 'ambos', r.hits, 'analise'), 'default'); reuso.ficha = fr.cached; if(fr.truncado) avisoCorte = true;
       if(my!==seq) return;
       if(fmts.includes('analise')) $('o-analise').querySelector('.out-b').innerHTML = '<p class="note dots">Conferindo a ficha contra as fontes</p>';
       const v = parseVerif(String(await sample(promptVerif(tema, String(fr), r.hits), 'default')), String(fr));
@@ -561,7 +563,7 @@ async function answer(q){
       if(my!==seq) return;
     }
     finish(); checkAll(fmts);
-    note(selo + ' Ficha ' + (reuso.ficha ? 'reaproveitada, sem custo.' : 'gerada agora e guardada.') + (social.length ? ' Textos para redes reaproveitados ' + reuso.posts + ' de ' + social.length + '.' : ''));
+    note((avisoCorte ? 'A ficha original veio incompleta por limite de tamanho; a conferência retirou o trecho cortado. ' : '') + selo + ' Ficha ' + (reuso.ficha ? 'reaproveitada, sem custo.' : 'gerada agora e guardada.') + (social.length ? ' Textos para redes reaproveitados ' + reuso.posts + ' de ' + social.length + '.' : ''));
     if(PREP) $('ans').insertAdjacentHTML('beforeend', '<div class="rev"><button type="button" class="go" id="rev-b">Revisar e aprovar esta ficha</button></div>');
   }catch(e){
     if(my===seq){
@@ -706,7 +708,7 @@ sample = /^https:\/\//.test(PROXY) ? (async (p, tier, o) => {
   let r; try{ r = await fetch(PROXY, {method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(Object.assign({prompt:p, tier: tier || 'default'}, o || {}))}); }catch(_){ const e = new Error('sem_resposta'); e.code = 'sem_resposta'; throw e; }
   const j = await r.json().catch(() => ({}));
   if(!r.ok || typeof j.text !== 'string'){ const c = j.error || (r.status === 403 ? 'sem_resposta' : 'falha_' + r.status); const e = new Error(c); e.code = c; throw e; }
-  const out = new String(j.text); out.cached = !!j.cached; return out;
+  const out = new String(j.text); out.cached = !!j.cached; out.truncado = !!j.truncado; return out;
 }) : null;
 ready = true; run($('q').value, false);
 })();
