@@ -151,7 +151,7 @@ footer .volunt{margin:10px 0 0;font-weight:600;color:var(--ink)}
     <div class="star" aria-hidden="true">13</div>
     <div class="eyebrow">Duas fontes · Programa de Governo de Lula para o próximo mandato · Cadernos do Futuro do Brasil</div>
     <h1>O que Lula <em class="rb r">fez</em> e o que <em class="rb b">fará</em> no novo mandato</h1>
-    <p class="lede">Digite um tema ou uma pergunta. A ferramenta localiza os trechos no Programa de Governo de Lula para o próximo mandato e nos Cadernos do Futuro do Brasil e redige uma resposta que separa as entregas do atual mandato dos compromissos para o próximo, sempre com a indicação da fonte.</p>
+    <p class="lede">Digite um tema ou uma pergunta. A ferramenta localiza os trechos no Programa de Governo de Lula para o próximo mandato e nos Cadernos do Futuro do Brasil e redige uma resposta que separa as entregas do atual mandato dos compromissos para o próximo, sempre com a indicação da fonte. Automatize com um clique a geração de conteúdo para redes sociais e mensagens de celular sobre cada tema.</p>
   </header>
 
   <form id="f">
@@ -206,7 +206,7 @@ footer .volunt{margin:10px 0 0;font-weight:600;color:var(--ink)}
     </section>
   </main>
 
-  <footer><strong>Fontes.</strong> Programa de Governo de Lula para o próximo mandato, da coligação PT, PSB, PV, PCdoB, PDT, PSOL e Rede (citado pela página, como p. 54), e Cadernos do Futuro do Brasil, "Brasil pronto para mais!", versão para editoração (citados pelo código do trecho, como C 212, porque essa versão ainda não tem paginação final). As respostas resumem o que os dois documentos afirmam e não verificam os dados de forma independente. Confira o trecho original antes de citar. <span style="font-family:var(--mono)">Versão 27 · web</span><p class="volunt">Trabalho voluntário sem vínculo com a campanha do Presidente Lula.</p></footer>
+  <footer><strong>Fontes.</strong> Programa de Governo de Lula para o próximo mandato, da coligação PT, PSB, PV, PCdoB, PDT, PSOL e Rede (citado pela página, como p. 54), e Cadernos do Futuro do Brasil, "Brasil pronto para mais!", versão para editoração (citados pelo código do trecho, como C 212, porque essa versão ainda não tem paginação final). As respostas resumem o que os dois documentos afirmam e não verificam os dados de forma independente. Confira o trecho original antes de citar. <span style="font-family:var(--mono)">Versão 28 · web</span><p class="volunt">Trabalho voluntário sem vínculo com a campanha do Presidente Lula.</p></footer>
 </div>
 
 <dialog id="dlg" aria-labelledby="dlg-t">
@@ -590,7 +590,7 @@ async function answer(q){
       if(my!==seq) return;
     }
     finish(); checkAll(fmts);
-    note((avisoCorte ? 'A ficha original veio incompleta por limite de tamanho; a conferência retirou o trecho cortado. ' : '') + selo + ' Ficha ' + (reuso.ficha ? 'reaproveitada, sem custo.' : 'gerada agora e guardada.') + (social.length ? ' Textos para redes reaproveitados ' + reuso.posts + ' de ' + social.length + '.' : ''));
+    if(REVISOR()) note((avisoCorte ? 'A ficha original veio incompleta por limite de tamanho; a conferência retirou o trecho cortado. ' : '') + selo + ' Ficha ' + (reuso.ficha ? 'reaproveitada, sem custo.' : 'gerada agora e guardada.') + (social.length ? ' Textos para redes reaproveitados ' + reuso.posts + ' de ' + social.length + '.' : ''));
     if(PREP) $('ans').insertAdjacentHTML('beforeend', '<div class="rev"><button type="button" class="go" id="rev-b">Revisar e aprovar esta ficha</button></div>');
   }catch(e){
     if(my===seq){
