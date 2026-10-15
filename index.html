@@ -206,7 +206,7 @@ footer .volunt{margin:10px 0 0;font-weight:600;color:var(--ink)}
     </section>
   </main>
 
-  <footer><strong>Fontes.</strong> Programa de Governo de Lula para o próximo mandato, da coligação PT, PSB, PV, PCdoB, PDT, PSOL e Rede (citado pela página, como p. 54), e Cadernos do Futuro do Brasil, "Brasil pronto para mais!", versão para editoração (citados pelo código do trecho, como C 212, porque essa versão ainda não tem paginação final). As respostas resumem o que os dois documentos afirmam e não verificam os dados de forma independente. Confira o trecho original antes de citar. <span style="font-family:var(--mono)">Versão 26 · web</span><p class="volunt">Trabalho voluntário sem vínculo com a campanha do Presidente Lula.</p></footer>
+  <footer><strong>Fontes.</strong> Programa de Governo de Lula para o próximo mandato, da coligação PT, PSB, PV, PCdoB, PDT, PSOL e Rede (citado pela página, como p. 54), e Cadernos do Futuro do Brasil, "Brasil pronto para mais!", versão para editoração (citados pelo código do trecho, como C 212, porque essa versão ainda não tem paginação final). As respostas resumem o que os dois documentos afirmam e não verificam os dados de forma independente. Confira o trecho original antes de citar. <span style="font-family:var(--mono)">Versão 27 · web</span><p class="volunt">Trabalho voluntário sem vínculo com a campanha do Presidente Lula.</p></footer>
 </div>
 
 <dialog id="dlg" aria-labelledby="dlg-t">
@@ -393,7 +393,7 @@ function flag(f, missing){
   o.querySelectorAll('.warn,.okc').forEach(x => x.remove());
   const cp = o.querySelector('.cp');
   if(missing.length){
-    o.insertAdjacentHTML('beforeend', '<div class="warn"><strong>Conferir antes de divulgar.</strong> Não encontrado nas fontes '+esc(missing.slice(0,8).join(', '))+'. <button type="button" class="ghost unlock" data-k="'+f+'">Conferi, liberar cópia</button></div>');
+    o.insertAdjacentHTML('beforeend', '<div class="warn"><strong>Conferir antes de divulgar.</strong> Não encontrado nas fontes '+esc(missing.slice(0,8).join(', '))+'. '+(REVISOR() ? '<button type="button" class="ghost unlock" data-k="'+f+'">Conferi, liberar cópia</button>' : '')+'</div>');
     cp.dataset.lock = '1'; cp.textContent = 'Conferir antes de copiar';
   } else {
     delete cp.dataset.lock; cp.textContent = 'Copiar';
@@ -403,11 +403,38 @@ function flag(f, missing){
 function checkAll(fmts){
   fmts.forEach(f => {
     if(!raws[f]) return;
-    flag(f, checkFacts(raws[f], f === 'analise' ? lastFonte : lastFonte + '\n' + lastFicha));
+    guard(f);
     const h = $('o-'+f).querySelector('.out-h');
     if(SOCIAL[f] && !h.querySelector('.fic')) h.querySelector('.cp').insertAdjacentHTML('beforebegin', '<button type="button" class="ghost fic">Ver ficha e fontes</button>');
   });
 }
+const REVISOR = () => typeof PREP !== 'undefined' && PREP;
+function renderBlock(f, t){ curFmt = f; plain = !!SOCIAL[f]; target = $('o-'+f).querySelector('.out-b'); renderAnswer(t); }
+function fixPrompt(f, text, miss){
+  return 'Reescreva o texto abaixo, feito para ' + NAMES[f] + ', retirando por completo as informações que contêm os seguintes itens, que não foram confirmados nas fontes, ' + miss.join(', ') + '. Mantenha todo o resto como está, sem acrescentar nenhuma informação nova. ' + SOCIAL[f] + ' Não cite fontes nem documentos e não inclua comentários. Não use dois-pontos para ligar frases. Responda apenas com o texto reescrito, em português do Brasil.\n\nTEXTO\n' + text;
+}
+// Para o público: o que não passa na conferência é corrigido automaticamente ou retirado. Só o revisor pode liberar manualmente.
+async function guard(f){
+  const o = $('o-'+f); if(!o || !raws[f]) return;
+  const src = f === 'analise' ? lastFonte : lastFonte + '\n' + lastFicha;
+  let miss = checkFacts(raws[f], src);
+  if(miss.length && !REVISOR()){
+    const el = o.querySelector('.out-b');
+    if(f === 'analise'){
+      renderBlock(f, raws[f].split('\n').filter(l => { const n = norm(l.replace(/(\d)\.(\d)/g, '$1$2')); return !miss.some(m => n.includes(norm(m))); }).join('\n'));
+    } else {
+      el.insertAdjacentHTML('afterbegin', '<p class="note dots">Ajustando o texto à conferência das fontes</p>');
+      try{ renderBlock(f, await ask(fixPrompt(f, raws[f], miss))); }catch(_){}
+    }
+    miss = checkFacts(raws[f] || '', src);
+    if(miss.length){
+      el.innerHTML = '<p class="note err">Este texto não passou na conferência automática das fontes e foi retirado. Gere de novo ou faça uma consulta mais específica.</p>';
+      raws[f] = ''; o.querySelector('.cp').hidden = true; o.querySelectorAll('.warn,.okc,.rf').forEach(x => x.remove()); return;
+    }
+  }
+  flag(f, miss);
+}
+const ask = async p => String(await sample(p, 'post', {cache:false}));
 function promptVerif(tema, ficha, hits){
   return 'Você é revisor de checagem. Abaixo há uma ficha de fatos sobre o tema indicado, escrita a partir dos trechos que vêm depois dela. Confira cada item da ficha contra os trechos.\n\n'
   + FONTES + '\n\n' + LER + '\n\n'
@@ -466,7 +493,7 @@ async function refine(f){
   try{
     const res = await sample('Reescreva o texto abaixo, feito para ' + NAMES[f] + ', aplicando o ajuste pedido. Regras do formato. ' + SOCIAL[f] + ' Não acrescente fatos, números, datas ou nomes de programas que não estejam no texto original. Não cite fontes nem documentos e não inclua comentários, observações ou ressalvas. Não use dois-pontos para ligar frases. Responda apenas com o texto reescrito, em português do Brasil.\n\nAJUSTE PEDIDO\n' + inst.slice(0,600) + '\n\nTEXTO ORIGINAL\n' + prev, 'post', {cache:false});
     const text = String(typeof res === 'string' ? res : res.text).trim();
-    put(text || prev); inp.value = ''; flag(f, checkFacts(text || prev, lastFonte + '\n' + lastFicha));
+    put(text || prev); inp.value = ''; guard(f);
   }catch(e){ put(prev); note('Não foi possível refazer este texto. Tente de novo em instantes.', true); }
   finally{ btn.disabled = false; }
 }
@@ -537,7 +564,7 @@ async function answer(q){
     if(!r.hits.length){ idle('As fontes não trazem trechos sobre este tema. Tente outra formulação.'); return; }
     $('ans').innerHTML = fmts.map(f => '<div class="out" id="o-'+f+'"><div class="out-h"><strong>'+ico(f)+NAMES[f]+'</strong><button type="button" class="ghost cp" data-k="'+f+'" hidden>Copiar</button></div><div class="out-b"><p class="note dots">'+(f==='analise' ? 'Lendo '+r.hits.length+' trechos' : 'Preparando o texto')+'</p></div></div>').join(''); built = true;
     // Etapa 1: ficha de fatos do tema. Uma ficha aprovada pela equipe tem prioridade; senão, a ficha é gerada e conferida contra as fontes.
-    const fonte = r.hits.map(h => C[h.i].t).join('\n'); const reuso = {ficha: false, posts: 0}; let ficha, selo, avisoCorte = false;
+    const fonte = r.hits.map(h => secOf(C[h.i]) + '\n' + C[h.i].t).join('\n'); const reuso = {ficha: false, posts: 0}; let ficha, selo, avisoCorte = false;
     const ap = await aprovada(tema);
     if(ap){ ficha = ap.ficha; reuso.ficha = true; selo = 'Ficha revisada e aprovada pela equipe' + (ap.em ? ' em ' + new Date(ap.em).toLocaleDateString('pt-BR') : '') + '.'; }
     else {
