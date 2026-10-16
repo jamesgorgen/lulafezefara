@@ -377,14 +377,14 @@ footer p{max-width:90ch;margin:0 0 6px}
   </div>
 </footer>
 
-<script src="config.js?v=20261014i"></script>
+<script src="config.js?v=20261016a"></script>
 <script>
 // Endereço padrão do serviço intermediário, usado se o config.js não for encontrado ou vier vazio.
 if (!window.MONITOR_PROXY) window.MONITOR_PROXY = 'https://exterminadores-proxy.gorgen-james.workers.dev';
 </script>
-<script src="taxonomia.js?v=20261014i"></script>
-<script src="promessas.js?v=20261014i"></script>
-<script src="motor.js?v=20261014i"></script>
+<script src="taxonomia.js?v=20261016a"></script>
+<script src="promessas.js?v=20261016a"></script>
+<script src="motor.js?v=20261016a"></script>
 <script>
 (function(){
 'use strict';
@@ -900,11 +900,14 @@ function seloTriagem(it){
 }
 // Só entram na triagem os projetos ligados a algum tema e que não são homenagens.
 const candidatosTriagem = () => estado.itens.filter(it => it.temas.length && !it.homenagem);
+// O que o botão tria são os projetos da lista atual, com os filtros escolhidos (partido, área, temas,
+// autoria de Flávio, texto procurado), menos o filtro da própria triagem.
+const candidatosDaLista = () => estado.opc ? filtrados(baseFiltrada(true)).filter(it => it.temas.length && !it.homenagem) : [];
 
 // Tabela cruzada da triagem. Cada projeto aparece numa única célula, e os números consideram
 // os mesmos filtros da lista (partidos, temas, Flávio autor), exceto a própria triagem.
 function painelTriagem(){
-  const pendentesBusca = candidatosTriagem().filter(it => !TRI[it.chave]).length;
+  const pendentesBusca = candidatosDaLista().filter(it => !TRI[it.chave]).length;
   const base = estado.opc ? filtrados(baseFiltrada(true)) : [];
   const LINHAS = [...TAX.cadernos.map(c => 'p-' + c.id), 'prejudica', 'incerto', 'neutro', 'favorece'];
   const ROT = { prejudica: 'Efeito negativo, total', incerto: 'Efeito incerto', neutro: 'Sem efeito relevante', favorece: 'Efeito positivo' };
@@ -931,14 +934,14 @@ function painelTriagem(){
       <tbody>${LINHAS.map(linha).join('')}</tbody>
       <tfoot><tr><th scope="row">Total</th>${C.map(c => cel('todos', c, totC[c] || 0, 'tot')).join('')}${cel('todos', 'todos', triados, 'tot')}</tr></tfoot>
     </table>
-    <p class="tri-nota">Cada projeto conta uma única vez, pela área do tema mais atingido. O efeito negativo total soma as áreas acima dele. Clique num número, numa linha ou numa coluna para filtrar a lista.${semTriagem ? ` ${fmt(semTriagem)} ${semTriagem === 1 ? 'projeto da lista ainda não foi triado' : 'projetos da lista ainda não foram triados'}.` : ''}</p>` : '';
+    <p class="tri-nota">A tabela e o botão de triagem consideram a lista atual, com os filtros escolhidos. Cada projeto conta uma única vez, pela área do tema mais atingido. O efeito negativo total soma as áreas acima dele. Clique num número, numa linha ou numa coluna para filtrar a lista.${semTriagem ? ` ${fmt(semTriagem)} ${semTriagem === 1 ? 'projeto da lista ainda não foi triado' : 'projetos da lista ainda não foram triados'}.` : ''}</p>` : '';
   return `<h3>Triagem por IA</h3>
     <p>A IA lê a ementa e indica o efeito do projeto e a relação com o programa de Flávio. Confira antes de divulgar.</p>
     ${tabela}
     <div class="tri-acoes">
       ${triagem.rodando
         ? `<button type="button" class="btn-sec" id="tri-parar">Parar a triagem</button>`
-        : `<button type="button" class="btn-go" id="tri-rodar" ${pendentesBusca ? '' : 'disabled'}>${pendentesBusca ? `Triar ${pendentesBusca === 1 ? 'o projeto' : `os ${fmt(pendentesBusca)} projetos`} com IA` : 'Todos os projetos já foram triados'}</button>`}
+        : `<button type="button" class="btn-go" id="tri-rodar" ${pendentesBusca ? '' : 'disabled'}>${pendentesBusca ? `Triar ${pendentesBusca === 1 ? 'o projeto' : `os ${fmt(pendentesBusca)} projetos`} da lista com IA` : 'Todos os projetos da lista já foram triados'}</button>`}
       ${triagem.fd !== 'todos' || triagem.fc !== 'todos' ? '<button type="button" class="btn-sec" data-fd="todos" data-fc="todos">Mostrar todos os projetos</button>' : ''}
     </div>
     <div class="tri-status ${triagem.erro ? 'erro' : ''}" role="status" aria-live="polite">${triagem.rodando
@@ -951,7 +954,7 @@ const LOTE_TRIAGEM = 25;
 async function rodarTriagem(){
   if (triagem.rodando) return;
   const proxy = (window.MONITOR_PROXY || '').replace(/\/+$/, '');
-  const fila = candidatosTriagem().filter(it => !TRI[it.chave]);
+  const fila = candidatosDaLista().filter(it => !TRI[it.chave]);
   if (!fila.length) return;
   const lotes = [];
   for (let i = 0; i < fila.length; i += LOTE_TRIAGEM) lotes.push(fila.slice(i, i + LOTE_TRIAGEM));
@@ -972,7 +975,7 @@ async function rodarTriagem(){
     atualizarPainelTriagem();
   }), 3);
   // Uma segunda tentativa automática para os lotes que falharam.
-  const resto = candidatosTriagem().filter(it => !TRI[it.chave]);
+  const resto = fila.filter(it => !TRI[it.chave]);
   if (resto.length && !triagem.parar && !erroGeral) {
     const lotes2 = [];
     for (let i = 0; i < resto.length; i += LOTE_TRIAGEM) lotes2.push(resto.slice(i, i + LOTE_TRIAGEM));
@@ -990,7 +993,7 @@ async function rodarTriagem(){
       atualizarPainelTriagem();
     }), 2);
   }
-  const faltam = candidatosTriagem().filter(it => !TRI[it.chave]).length;
+  const faltam = fila.filter(it => !TRI[it.chave]).length;
   triagem.rodando = false;
   triagem.erro = erroGeral || (faltam && !triagem.parar ? `${fmt(faltam)} projetos não puderam ser triados agora. Clique de novo para tentar.${ultimoMotivo ? ` Resposta do serviço: ${ultimoMotivo.slice(0, 220)}` : ''}` : '');
   // Ao terminar a primeira triagem, a página passa a mostrar só os projetos com efeito negativo.
