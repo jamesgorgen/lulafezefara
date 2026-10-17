@@ -178,11 +178,12 @@ details.detalhe > .corpo{padding:4px 16px 16px;border-top:1px solid var(--line)}
 .tri-status.erro{color:var(--warn)}
 .tri{font-size:12px;font-weight:700;border-radius:3px;padding:1px 7px;border:1.5px solid currentColor}
 .tri-prejudica{color:var(--red);border-color:var(--red);background:color-mix(in srgb, var(--red) 10%, transparent)}
-.tri-favorece{color:#2f6b3a}
+.tri-contradiz{background:var(--ink);color:var(--sheet);border-color:var(--ink)}
 .tri-incerto{color:var(--warn)}
 .tri-neutro{color:var(--ink-3);font-weight:600}
-.tri-com{color:var(--ink);border-color:var(--ink)}
-.tri-provavel{color:var(--ink-2);border-style:dashed}
+.tri-omite{color:var(--ink);border-color:var(--ink);border-style:dashed}
+.tri-declara{color:var(--ink-2)}
+.tri-sem{color:var(--ink-3);font-weight:600}
 .tri-linha{display:flex;flex-wrap:wrap;gap:4px 16px;align-items:baseline;font-size:14.5px;margin:0 0 6px}
 .tri-linha > span:first-child{font-size:12.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-3);min-width:150px}
 .tri-tabela{border-collapse:separate;border-spacing:3px;font-size:14px;margin:4px 0 10px;width:100%;max-width:720px}
@@ -199,6 +200,7 @@ details.detalhe > .corpo{padding:4px 16px 16px;border-top:1px solid var(--line)}
 .tri-tabela th.sub-area{padding-left:14px}
 .tri-tabela .tot{background:transparent;color:var(--ink-2);border-left:2px solid var(--line)}
 .tri-tabela tfoot td{background:transparent;color:var(--ink-2)}
+.tri-nota .link-tri{border:0;background:none;padding:0;color:var(--red);font:inherit;text-decoration:underline;cursor:pointer}
 .tri-nota{font-size:13px;color:var(--ink-3);margin:0 0 10px}
 .tri-sem{color:var(--ink-3);font-weight:600}
 .tri-motivo{font-size:13.5px;color:var(--ink-2);margin:8px 0 0}
@@ -391,14 +393,14 @@ footer p{max-width:90ch;margin:0 0 6px}
   </div>
 </footer>
 
-<script src="config.js?v=20261016c"></script>
+<script src="config.js?v=20261016d"></script>
 <script>
 // Endereço padrão do serviço intermediário, usado se o config.js não for encontrado ou vier vazio.
 if (!window.MONITOR_PROXY) window.MONITOR_PROXY = 'https://exterminadores-proxy.gorgen-james.workers.dev';
 </script>
-<script src="taxonomia.js?v=20261016c"></script>
-<script src="promessas.js?v=20261016c"></script>
-<script src="motor.js?v=20261016c"></script>
+<script src="taxonomia.js?v=20261016d"></script>
+<script src="promessas.js?v=20261016d"></script>
+<script src="motor.js?v=20261016d"></script>
 <script>
 (function(){
 'use strict';
@@ -425,11 +427,11 @@ function gravarAval(){ try { localStorage.setItem('exterminadores-avaliacoes', J
 
 // Triagem rápida pelas ementas, também guardada no navegador (e por 90 dias no Worker).
 let TRI = {};
-try { TRI = JSON.parse(localStorage.getItem('exterminadores-triagem6') || '{}'); } catch (e) { TRI = {}; }
-function gravarTri(){ try { localStorage.setItem('exterminadores-triagem6', JSON.stringify(TRI)); } catch (e) {} }
+try { TRI = JSON.parse(localStorage.getItem('exterminadores-triagem7') || '{}'); } catch (e) { TRI = {}; }
+function gravarTri(){ try { localStorage.setItem('exterminadores-triagem7', JSON.stringify(TRI)); } catch (e) {} }
 const triagem = { rodando: false, parar: false, feitos: 0, total: 0, erro: '', fd: 'todos', fc: 'todos' };
 // Grupos de efeito. "p-<área>" seleciona os que prejudicam aquela área; "prejudica" seleciona todos que prejudicam.
-const grupoEfeito = t => t.d === 'prejudica' ? (TEMA[t.t] ? 'p-' + TEMA[t.t].caderno : 'incerto') : t.d;
+const grupoEfeito = t => t.d === 'prejudica' ? (TEMA[t.t] ? 'p-' + TEMA[t.t].caderno : 'incerto') : t.d === 'incerto' ? 'incerto' : 'sem';
 const passaTriagem = it => {
   if (triagem.fd === 'todos' && triagem.fc === 'todos') return true;
   const t = TRI[it.chave]; if (!t) return false;
@@ -441,10 +443,9 @@ const passaTriagem = it => {
 const qualTriagem = dele => {
   const fd = triagem.fd;
   const d = fd === 'prejudica' ? ' com efeito negativo' : fd.startsWith('p-') ? ' com efeito negativo em ' + CADERNO[fd.slice(2)].subtitulo.toLowerCase()
-    : { incerto: ' de efeito incerto', neutro: ' sem efeito relevante', favorece: ' com efeito positivo' }[fd] || '';
+    : { incerto: ' com efeito a conferir', sem: ' sem efeito negativo aparente' }[fd] || '';
   const quem = dele ? ' dele' : ' de Flávio';
-  const C = { com: ' com relação ao programa' + quem, provavel: ' com provável relação ao programa' + quem, sem: ' sem relação com o programa' + quem };
-  const c = C[triagem.fc] || '';
+  const c = { contradiz: ' que contradizem o programa' + quem, omite: ' omitidos no programa' + quem, declara: ' declarados no programa' + quem }[triagem.fc] || '';
   return d + (d && c ? ',' : '') + c;
 };
 
@@ -752,7 +753,7 @@ function desenhar(){
   }
   $('#resultado').innerHTML = `
     ${avisos}
-    <p class="frase"><strong>${fmt(lista.length)}</strong> projetos${esc(qualTriagem())} de ${nPartidos} ${nPartidos === 1 ? 'partido' : 'partidos'} em ${nTemas} ${nTemas === 1 ? 'tema' : 'temas'}, apresentados ${periodoTexto()}.${nFlavio && !$('#so-flavio').checked ? ` Destes, ${fmt(nFlavio)} ${nFlavio === 1 ? 'tem' : 'têm'} o próprio Flávio Bolsonaro como autor.` : ''}</p>
+    <p class="frase"><strong>${fmt(lista.length)}</strong> projetos de ${nPartidos} ${nPartidos === 1 ? 'partido' : 'partidos'} em ${nTemas} ${nTemas === 1 ? 'tema' : 'temas'}${esc(qualTriagem())}, apresentados ${periodoTexto()}.${nFlavio && !$('#so-flavio').checked ? ` Destes, ${fmt(nFlavio)} ${nFlavio === 1 ? 'tem' : 'têm'} o próprio Flávio Bolsonaro como autor.` : ''}</p>
     ${metodo}${avisoFlavio}
     <section class="triagem" id="triagem" aria-label="Triagem por IA">${painelTriagem()}</section>
     <details class="detalhe promessas-sec" data-secao="promessas" ${estado.abertos.promessas ? 'open' : ''}>
@@ -913,14 +914,20 @@ function desenharLista(lista){
 }
 
 // ---------------------------------------------------------------- triagem por IA
-const NOME_TRI = { com: 'Com relação ao programa', provavel: 'Provável relação ao programa', sem: 'Sem relação ao programa' };
-const NOME_DIR = { favorece: 'Efeito positivo', neutro: 'Sem efeito relevante', incerto: 'Efeito incerto' };
-const nomeEfeito = t => t.d === 'prejudica' && TEMA[t.t] ? 'Efeito negativo em ' + TEMA[t.t].tema.charAt(0).toLowerCase() + TEMA[t.t].tema.slice(1) : NOME_DIR[grupoEfeito(t)] || '';
+const NOME_TRI = { contradiz: 'Contradiz o programa', omite: 'Omitido no programa', declara: 'Declarado no programa' };
+const NOME_DIR = { incerto: 'Efeito a conferir', sem: 'Sem efeito negativo aparente' };
+const minusc = x => x.charAt(0).toLowerCase() + x.slice(1);
+const nomeEfeito = t => {
+  const g = grupoEfeito(t);
+  if (g.startsWith('p-')) return 'Efeito negativo em ' + minusc(TEMA[t.t].tema);
+  if (g === 'incerto' && TEMA[t.t]) return 'A conferir em ' + minusc(TEMA[t.t].tema);
+  return NOME_DIR[g] || '';
+};
 function seloTriagem(it){
   const t = TRI[it.chave]; if (!t) return '';
   const nome = nomeEfeito(t);
-  const d = nome ? `<span class="tri tri-${grupoEfeito(t).startsWith('p-') ? 'prejudica' : t.d}" title="Efeito do projeto, segundo a triagem por IA da ementa">${esc(nome)}</span>` : '';
-  const c = NOME_TRI[t.c] && t.c !== 'sem' ? `<span class="tri tri-${t.c}" title="Relação com o programa de Flávio, segundo a triagem por IA da ementa">${NOME_TRI[t.c]}</span>` : '';
+  const d = nome ? `<span class="tri tri-${grupoEfeito(t).startsWith('p-') ? 'prejudica' : grupoEfeito(t)}" title="Efeito do projeto, segundo a triagem por IA da ementa">${esc(nome)}</span>` : '';
+  const c = NOME_TRI[t.c] ? `<span class="tri tri-${t.c}" title="O que o programa de Flávio diz sobre o assunto, segundo a triagem por IA da ementa">${NOME_TRI[t.c]}</span>` : '';
   return d + c;
 }
 // Só entram na triagem os projetos ligados a algum tema e que não são homenagens.
@@ -934,16 +941,17 @@ const candidatosDaLista = () => estado.opc ? filtrados(baseFiltrada(true)).filte
 function painelTriagem(){
   const pendentesBusca = candidatosDaLista().filter(it => !TRI[it.chave]).length;
   const base = estado.opc ? filtrados(baseFiltrada(true)) : [];
-  const LINHAS = [...TAX.cadernos.map(c => 'p-' + c.id), 'prejudica', 'incerto', 'neutro', 'favorece'];
-  const ROT = { prejudica: 'Efeito negativo, total', incerto: 'Efeito incerto', neutro: 'Sem efeito relevante', favorece: 'Efeito positivo' };
+  const LINHAS = [...TAX.cadernos.map(c => 'p-' + c.id), 'prejudica', 'incerto'];
+  const ROT = { prejudica: 'Efeito negativo, total', incerto: 'Efeito a conferir' };
   TAX.cadernos.forEach(c => ROT['p-' + c.id] = c.subtitulo);
-  const C = ['com', 'provavel', 'sem'];
-  const ROT_C = { com: 'Com relação', provavel: 'Provável relação', sem: 'Sem relação' };
-  const cont = {}, totL = {}, totC = {}; let triados = 0, semTriagem = 0;
+  const C = ['contradiz', 'omite', 'declara'];
+  const ROT_C = { contradiz: 'Contradiz<br>o programa', omite: 'Omitido<br>no programa', declara: 'Declarado<br>no programa' };
+  const cont = {}, totL = {}, totC = {}; let triados = 0, semTriagem = 0, semEfeito = 0;
   const soma = (l, c) => { cont[l + '|' + c] = (cont[l + '|' + c] || 0) + 1; totL[l] = (totL[l] || 0) + 1; };
   base.forEach(it => {
     const t = TRI[it.chave];
     const g = t && grupoEfeito(t);
+    if (t && g === 'sem') { semEfeito++; return; }
     if (!t || !ROT[g] || !C.includes(t.c)) { semTriagem++; return; }
     soma(g, t.c);
     if (g.startsWith('p-')) soma('prejudica', t.c);
@@ -955,13 +963,13 @@ function painelTriagem(){
     : `<td class="zero ${extra || ''}">0</td>`;
   const linha = l => `<tr class="${l === 'prejudica' ? 'sub' : ''}"><th scope="row" class="${l.startsWith('p-') ? 'sub-area' : ''} ${sel(l, 'todos') ? 'sel' : ''}" data-fd="${l}" data-fc="todos">${ROT[l]}</th>${C.map(c => cel(l, c, cont[l + '|' + c] || 0, l.startsWith('p-') || l === 'prejudica' ? 'forte' : '')).join('')}${cel(l, 'todos', totL[l] || 0, 'tot')}</tr>`;
   const tabela = triados ? `<table class="tri-tabela">
-      <thead><tr><th>Efeito negativo por área</th>${C.map(c => `<th scope="col" data-fd="todos" data-fc="${c}" class="${sel('todos', c) ? 'sel' : ''}">${ROT_C[c]}<br>ao programa de Flávio</th>`).join('')}<th scope="col">Total</th></tr></thead>
+      <thead><tr><th>Efeito negativo por área</th>${C.map(c => `<th scope="col" data-fd="todos" data-fc="${c}" class="${sel('todos', c) ? 'sel' : ''}">${ROT_C[c]} de Flávio</th>`).join('')}<th scope="col">Total</th></tr></thead>
       <tbody>${LINHAS.map(linha).join('')}</tbody>
       <tfoot><tr><th scope="row">Total</th>${C.map(c => cel('todos', c, totC[c] || 0, 'tot')).join('')}${cel('todos', 'todos', triados, 'tot')}</tr></tfoot>
     </table>
-    <p class="tri-nota">A tabela e o botão de triagem consideram a lista atual, com os filtros escolhidos. Cada projeto conta uma única vez, pela área do tema mais atingido. O efeito negativo total soma as áreas acima dele. Clique num número, numa linha ou numa coluna para filtrar a lista.${semTriagem ? ` ${fmt(semTriagem)} ${semTriagem === 1 ? 'projeto da lista ainda não foi triado' : 'projetos da lista ainda não foram triados'}.` : ''}</p>` : '';
+    <p class="tri-nota">A tabela e o botão de triagem consideram a lista atual, com os filtros escolhidos. Cada projeto conta uma única vez, pela área do tema mais atingido. Clique num número, numa linha ou numa coluna para filtrar a lista.${semEfeito ? ` <button type="button" class="link-tri" data-fd="sem" data-fc="todos">${fmt(semEfeito)} ${semEfeito === 1 ? 'projeto sem efeito negativo aparente ficou' : 'projetos sem efeito negativo aparente ficaram'} fora da tabela</button>.` : ''}${semTriagem ? ` ${fmt(semTriagem)} ${semTriagem === 1 ? 'projeto da lista ainda não foi triado' : 'projetos da lista ainda não foram triados'}.` : ''}</p>` : '';
   return `<h3>Triagem por IA</h3>
-    <p>A IA lê a ementa e indica o efeito do projeto e a relação com o programa de Flávio. Confira antes de divulgar.</p>
+    <p>A IA lê a ementa, aponta o efeito negativo e compara com o programa de Flávio, para mostrar o que ele contradiz e o que esconde do eleitor. Confira antes de divulgar.</p>
     ${tabela}
     <div class="tri-acoes">
       ${triagem.rodando
@@ -1048,8 +1056,8 @@ document.addEventListener('click', e => {
 });
 
 // ---------------------------------------------------------------- avaliação por IA
-const NOME_POSICAO = { conflita: 'Ameaça direitos', converge: 'Amplia direitos', misto: 'Efeitos mistos', neutro: 'Neutro' };
-const CLASSE_POSICAO = { conflita: 'ameaca', converge: 'favoravel', misto: 'misto', neutro: 'neutro' };
+const NOME_POSICAO = { conflita: 'Efeito negativo', converge: 'Sem efeito negativo', misto: 'Efeito negativo em parte', neutro: 'Sem efeito negativo' };
+const CLASSE_POSICAO = { conflita: 'ameaca', converge: 'neutro', misto: 'misto', neutro: 'neutro' };
 function painelAvaliacao(it){
   if (estado.avaliando.has(it.chave)) return '<div class="aval-andamento" role="status">Lendo o texto integral do projeto. Leva de 20 a 60 segundos.</div>';
   if (estado.erroAval[it.chave]) return `<div class="aval-erro">${esc(estado.erroAval[it.chave])}</div>`;
