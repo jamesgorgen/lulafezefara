@@ -147,8 +147,22 @@ main .wrap{display:grid;grid-template-columns:300px minmax(0,1fr);gap:34px;paddi
 .contraste .c-faz strong{font-family:var(--display);font-weight:900;font-size:34px;line-height:1;color:#fff}
 .flavio{background:var(--mark);color:var(--mark-ink);font-size:12.5px;font-weight:700;border-radius:3px;padding:1px 7px}
 .ficha.do-flavio::before{background:var(--mark)}
-details.detalhe{margin-top:26px}
-details.detalhe > summary{cursor:pointer;font-weight:700;font-size:15px;margin-bottom:10px}
+details.detalhe{margin-top:14px;border:2px solid var(--ink);background:var(--sheet)}
+details.detalhe > summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:14px;padding:14px 16px}
+details.detalhe > summary::-webkit-details-marker{display:none}
+details.detalhe > summary:hover{background:var(--paper)}
+details.detalhe .sum-texto{flex:1;min-width:0}
+details.detalhe .sum-titulo{display:block;font-family:var(--display);font-weight:900;text-transform:uppercase;font-size:clamp(22px,2.6vw,30px);line-height:1}
+details.detalhe .sum-sub{display:block;font-size:14px;color:var(--ink-2);margin-top:4px}
+details.detalhe .sum-acao{flex:none;display:inline-flex;align-items:center;gap:8px;background:var(--red);color:var(--red-ink);border-radius:999px;padding:7px 14px 7px 16px;font-weight:700;font-size:14px}
+details.detalhe .sum-acao svg{width:18px;height:18px;transition:transform .2s}
+details.detalhe[open] .sum-acao{background:var(--ink);color:var(--sheet)}
+details.detalhe[open] .sum-acao svg{transform:rotate(180deg)}
+details.detalhe .sum-acao .fechar{display:none}
+details.detalhe[open] .sum-acao .abrir{display:none}
+details.detalhe[open] .sum-acao .fechar{display:inline}
+details.detalhe > .corpo{padding:4px 16px 16px;border-top:1px solid var(--line)}
+@media (max-width:560px){details.detalhe .sum-acao .abrir,details.detalhe .sum-acao .fechar{display:none!important}details.detalhe .sum-acao{padding:8px}}
 
 /* triagem por IA */
 .triagem{background:var(--sheet);border:1px solid var(--line);border-left:4px solid var(--red);padding:14px 16px;margin:0 0 18px}
@@ -377,14 +391,14 @@ footer p{max-width:90ch;margin:0 0 6px}
   </div>
 </footer>
 
-<script src="config.js?v=20261016a"></script>
+<script src="config.js?v=20261016c"></script>
 <script>
 // Endereço padrão do serviço intermediário, usado se o config.js não for encontrado ou vier vazio.
 if (!window.MONITOR_PROXY) window.MONITOR_PROXY = 'https://exterminadores-proxy.gorgen-james.workers.dev';
 </script>
-<script src="taxonomia.js?v=20261016a"></script>
-<script src="promessas.js?v=20261016a"></script>
-<script src="motor.js?v=20261016a"></script>
+<script src="taxonomia.js?v=20261016c"></script>
+<script src="promessas.js?v=20261016c"></script>
+<script src="motor.js?v=20261016c"></script>
 <script>
 (function(){
 'use strict';
@@ -402,7 +416,7 @@ const $ = s => document.querySelector(s);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt = n => n.toLocaleString('pt-BR');
 
-const estado = { promessaSel: null, promessaPendente: null, marcados: new Set(), avaliando: new Set(), erroAval: {}, itens: [], avisos: [], temas: new Set(), partidoSel: null, cadernoSel: null, texto: '', pagina: 1, buscando: false, consulta: null, opc: null };
+const estado = { abertos: { promessas: false, matriz: false }, promessaSel: null, promessaPendente: null, marcados: new Set(), avaliando: new Set(), erroAval: {}, itens: [], avisos: [], temas: new Set(), partidoSel: null, cadernoSel: null, texto: '', pagina: 1, buscando: false, consulta: null, opc: null };
 
 // Avaliações ficam guardadas no navegador de quem usa (e também no cache do Worker).
 let AVAL = {};
@@ -703,6 +717,17 @@ function contraste(lista){
   </div>`;
 }
 
+// Cabeçalho clicável das seções que abrem e fecham.
+function resumoSecao(titulo, sub){
+  return `<summary><span class="sum-texto"><span class="sum-titulo">${esc(titulo)}</span><span class="sum-sub">${esc(sub)}</span></span>
+    <span class="sum-acao" aria-hidden="true"><span class="abrir">Abrir</span><span class="fechar">Fechar</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span></summary>`;
+}
+// Guarda quais seções a pessoa abriu, para continuarem abertas quando a página se redesenha.
+document.addEventListener('toggle', e => {
+  const d = e.target; if (!d.matches || !d.matches('details[data-secao]')) return;
+  estado.abertos[d.dataset.secao] = d.open;
+}, true);
+
 function periodoTexto(){
   const d = s => s.split('-').reverse().join('/');
   return estado.opc ? `entre ${d(estado.opc.inicio)} e ${d(estado.opc.fim)}` : '';
@@ -730,16 +755,16 @@ function desenhar(){
     <p class="frase"><strong>${fmt(lista.length)}</strong> projetos${esc(qualTriagem())} de ${nPartidos} ${nPartidos === 1 ? 'partido' : 'partidos'} em ${nTemas} ${nTemas === 1 ? 'tema' : 'temas'}, apresentados ${periodoTexto()}.${nFlavio && !$('#so-flavio').checked ? ` Destes, ${fmt(nFlavio)} ${nFlavio === 1 ? 'tem' : 'têm'} o próprio Flávio Bolsonaro como autor.` : ''}</p>
     ${metodo}${avisoFlavio}
     <section class="triagem" id="triagem" aria-label="Triagem por IA">${painelTriagem()}</section>
-    <details class="detalhe promessas-sec" ${estado.promessaSel ? '' : 'open'}>
-      <summary>Flávio promete, mas olha o que eles propõem</summary>
-      ${cartoesPromessas()}
+    <details class="detalhe promessas-sec" data-secao="promessas" ${estado.abertos.promessas ? 'open' : ''}>
+      ${resumoSecao('Flávio promete, mas olha o que eles propõem', 'Trechos do programa de Flávio ao lado dos projetos do campo dele sobre o mesmo assunto')}
+      <div class="corpo">${cartoesPromessas()}</div>
     </details>
-    <details class="detalhe" ${estado.cadernoSel || estado.partidoSel ? 'open' : ''}>
-      <summary>Projetos por partido e área</summary>
-      <div class="matrix-box">
+    <details class="detalhe" data-secao="matriz" ${estado.abertos.matriz ? 'open' : ''}>
+      ${resumoSecao('Projetos por partido e área', 'Quantos projetos cada partido apresentou em cada área')}
+      <div class="corpo"><div class="matrix-box">
         <p>Quanto mais escura a célula, mais projetos. Clique numa célula para ver só aqueles projetos.</p>
         <div class="matrix-wrap">${matriz(base, partidos)}</div>
-      </div>
+      </div></div>
     </details>
     <div class="toolbar">
       <label class="sr" for="texto">Procurar nos projetos encontrados</label>
@@ -941,7 +966,7 @@ function painelTriagem(){
     <div class="tri-acoes">
       ${triagem.rodando
         ? `<button type="button" class="btn-sec" id="tri-parar">Parar a triagem</button>`
-        : `<button type="button" class="btn-go" id="tri-rodar" ${pendentesBusca ? '' : 'disabled'}>${pendentesBusca ? `Triar ${pendentesBusca === 1 ? 'o projeto' : `os ${fmt(pendentesBusca)} projetos`} da lista com IA` : 'Todos os projetos da lista já foram triados'}</button>`}
+        : `<button type="button" class="btn-go" id="tri-rodar" ${pendentesBusca ? '' : 'disabled'}>${pendentesBusca ? `Triar ${pendentesBusca === 1 ? 'o projeto que falta' : `os ${fmt(pendentesBusca)} projetos que faltam`} na lista` : 'Todos os projetos da lista já foram triados'}</button>`}
       ${triagem.fd !== 'todos' || triagem.fc !== 'todos' ? '<button type="button" class="btn-sec" data-fd="todos" data-fc="todos">Mostrar todos os projetos</button>' : ''}
     </div>
     <div class="tri-status ${triagem.erro ? 'erro' : ''}" role="status" aria-live="polite">${triagem.rodando
