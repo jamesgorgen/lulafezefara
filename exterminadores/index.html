@@ -1197,7 +1197,7 @@ async function exportarTriagens(){
   exportando = false;
   exportStatus = `Arquivo gerado com ${nTri(nt)} e ${nAval(na)}` +
     (doBanco ? '.' : ', sem o banco do Worker, que não respondeu. Entraram só o arquivo publicado e o que está neste navegador.') +
-    ' Suba o triagens.json para a pasta exterminadores do repositório no GitHub, no lugar do anterior.';
+    ' Suba o triagens.json para o repositório do site no GitHub, no lugar do anterior.';
   desenharAdmin();
 }
 document.addEventListener('click', e => { if (e.target.id === 'exportar') exportarTriagens(); });

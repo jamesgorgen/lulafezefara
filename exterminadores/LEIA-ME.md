@@ -20,10 +20,10 @@ A ferramenta reúne os projetos apresentados por PL, Novo, PP, União Brasil, Po
 
 ## Publicação
 
-1. **Serviço intermediário no Cloudflare.** O Worker se chama `exterminadores-proxy`. Cole nele o conteúdo de `worker.js` e publique. A lista `ORIGENS_PERMITIDAS` já contém o lulafezefara.com.br e o endereço antigo no GitHub Pages.
+1. **Serviço intermediário no Cloudflare.** O Worker se chama `exterminadores-proxy`. Cole nele o conteúdo de `worker.js` e publique. A lista `ORIGENS_PERMITIDAS` já contém o exterminadores.com.br e, durante a transição, os endereços antigos (lulafezefara.com.br e GitHub Pages).
 2. **Chave da Anthropic.** Em Settings, Variables and Secrets, cadastre `ANTHROPIC_API_KEY` como Secret.
 3. **Banco D1.** Veja a seção seguinte.
-4. **Página.** Suba `index.html`, `motor.js`, `taxonomia.js`, `promessas.js`, `config.js` e `triagens.json` para a pasta `exterminadores` do repositório que publica o lulafezefara.com.br. Depois de publicar, recarregue com Ctrl+Shift+R.
+4. **Página.** Suba `index.html`, `motor.js`, `taxonomia.js`, `promessas.js`, `config.js`, `triagens.json` e `CNAME` para a raiz do repositório `exterminadores-do-futuro`, que publica o exterminadores.com.br pelo GitHub Pages. Depois de publicar, recarregue com Ctrl+Shift+R.
 
 ## Banco D1 (armazenamento permanente das triagens)
 
@@ -33,7 +33,7 @@ Para ligar o banco, uma vez só.
 
 1. No painel do Cloudflare, abra **Storage & Databases**, depois **D1 SQL Database**, e clique em **Create**. Dê o nome `exterminadores` e confirme.
 2. Abra o Worker `exterminadores-proxy`, vá em **Settings**, depois **Bindings**, e clique em **Add**. Escolha **D1 database**, escreva `DB` (maiúsculo) como nome da variável e selecione o banco `exterminadores`. Salve e publique (Deploy).
-3. Abra a página com `?admin` no fim do endereço (http://lulafezefara.com.br/exterminadores/?admin). A faixa amarela de administração deve dizer que o banco do Worker está ligado.
+3. Abra a página com `?admin` no fim do endereço (https://exterminadores.com.br/?admin). A faixa amarela de administração deve dizer que o banco do Worker está ligado.
 
 As tabelas são criadas sozinhas na primeira chamada. Não é preciso rodar nenhum comando. Sem o banco, o Worker continua funcionando com o cache local do Cloudflare, como antes, mas esse cache vale só para o data center de quem triou e pode ser apagado a qualquer momento.
 
@@ -49,7 +49,7 @@ A página procura as triagens já feitas em três lugares, nesta ordem.
 
 O botão de triagem só manda à IA o que não estiver em nenhum desses lugares.
 
-**Para atualizar o `triagens.json`.** Abra a página com `?admin` no endereço. A faixa de administração mostra quantas triagens estão no arquivo publicado, no banco e no seu navegador. O botão **Exportar triagens.json** junta tudo (banco, arquivo publicado e navegador) e baixa um arquivo novo. Suba esse arquivo para a pasta `exterminadores` do GitHub no lugar do anterior. Vale repetir isso de tempos em tempos para incorporar os projetos novos.
+**Para atualizar o `triagens.json`.** Abra a página com `?admin` no endereço. A faixa de administração mostra quantas triagens estão no arquivo publicado, no banco e no seu navegador. O botão **Exportar triagens.json** junta tudo (banco, arquivo publicado e navegador) e baixa um arquivo novo. Suba esse arquivo para a raiz do repositório no GitHub, no lugar do anterior. Vale repetir isso de tempos em tempos para incorporar os projetos novos.
 
 O arquivo traz uma triagem por linha, então o histórico do GitHub mostra exatamente o que entrou a cada atualização.
 
